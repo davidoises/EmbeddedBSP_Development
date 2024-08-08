@@ -31,7 +31,7 @@ endif
 SUB_DIRS +=  \
 .. \
 ../../xdk-asf/samd21/cmsis/samd21/source \
-../../xdk-asf/samd21/syscalls/gcc \
+../../xdk-asf/samd21/syscalls/gcc
 
 # List the object files
 OBJS +=  \
@@ -47,8 +47,12 @@ OBJS_AS_ARGS +=  \
 # List the directories containing header files
 DIR_INCLUDES +=  \
 -I"." \
+-I"../../xdk-asf/common" \
+-I"../../xdk-asf/common/interrupt" \
 -I"../../xdk-asf/samd21" \
 -I"../../xdk-asf/samd21/fpu" \
+-I"../../xdk-asf/samd21/preprocessor" \
+-I"../../xdk-asf/samd21/header_files" \
 -I"../../xdk-asf/samd21/cmsis/samd21/include" \
 -I"../../xdk-asf/samd21/cmsis/samd21/source" \
 -I"../../xdk-asf/thirdparty/cmsis/include"
@@ -61,14 +65,14 @@ DEPS_AS_ARGS +=  \
 "../main.d" \
 "../../xdk-asf/samd21/syscalls/gcc/syscalls.d"
 
-OUTPUT_FILE_NAME :=application
+OUTPUT_FILE_NAME :=application_samd21
 QUOTE := "
 OUTPUT_FILE_PATH +=$(OUTPUT_FILE_NAME).elf
 OUTPUT_FILE_PATH_AS_ARGS +=$(OUTPUT_FILE_NAME).elf
 
-vpath %.c ./
-vpath %.s ./
-vpath %.S ./
+vpath %.c ../
+vpath %.s ../
+vpath %.S ../
 
 # All Target
 all: $(SUB_DIRS) $(OUTPUT_FILE_PATH)
