@@ -48,8 +48,10 @@ int main()
 static void system_init(void)
 {
     // FPU enable
+    #if defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
     // // https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ApplicationNotes/ApplicationNotes/Atmel-44047-Cortex-M7-Microcontroller-Optimize-Usage-SAM-V71-V70-E70-S70-Architecture_Application-note.pdf
     fpu_enable();
+    #endif
 
     // Configure the wait states of the Embedded Flash Controller
     // CONF_EFC_WAIT_STATE = 6
@@ -65,4 +67,15 @@ static void system_init(void)
     // adc_init();
 
     // ports_init();
+}
+
+static void delay(int n)
+{
+    int i;
+
+    for (;n >0; n--)
+    {
+        for (i=0;i<100;i++)
+            __asm("nop");
+    }
 }

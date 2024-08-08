@@ -31,87 +31,21 @@ endif
 SUB_DIRS +=  \
 .. \
 ../../xdk-asf/samv71/cmsis/samv71/source \
-../../xdk-asf/samv71/syscalls/gcc
-
-# SUB_DIRS +=  \
-#  \
-# hpl/uart \
-# hpl/afec \
-# hpl/pmc \
-# samv71b/gcc/gcc \
-# hal/src \
-# hpl/xdmac \
-# samv71b/gcc \
-# hal/utils/src \
-# examples \
-# hpl/core
+../../xdk-asf/samv71/syscalls/gcc \
+../../xdk-asf/common/interrupt
 
 # List the object files
 OBJS +=  \
 ../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o \
 ../main.o \
-../../xdk-asf/samv71/syscalls/gcc/syscalls.o
-
-# OBJS +=  \
-# hal/src/hal_io.o \
-# samv71b/gcc/gcc/startup_samv71q21b.o \
-# atmel_start.o \
-# hpl/uart/hpl_uart.o \
-# hal/utils/src/utils_syscalls.o \
-# hal/src/hal_delay.o \
-# hpl/core/hpl_init.o \
-# hal/utils/src/utils_list.o \
-# hal/utils/src/utils_assert.o \
-# hpl/afec/hpl_afec.o \
-# hal/src/hal_usart_sync.o \
-# hpl/pmc/hpl_pmc.o \
-# samv71b/gcc/system_samv71q21b.o \
-# hal/src/hal_init.o \
-# main.o \
-# examples/driver_examples.o \
-# driver_init.o \
-# hal/src/hal_adc_sync.o \
-# hal/utils/src/utils_ringbuffer.o \
-# hal/src/hal_gpio.o \
-# hal/utils/src/utils_event.o \
-# hal/src/hal_sleep.o \
-# hpl/pmc/hpl_sleep.o \
-# hpl/core/hpl_core_m7_base.o \
-# hal/src/hal_atomic.o \
-# hpl/xdmac/hpl_xdmac.o
+../../xdk-asf/samv71/syscalls/gcc/syscalls.o \
+../../xdk-asf/common/interrupt/interrupt_sam_nvic.o
 
 OBJS_AS_ARGS +=  \
 "../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o" \
 "../main.o" \
-"../../xdk-asf/samv71/syscalls/gcc/syscalls.o"
-
-# OBJS_AS_ARGS +=  \
-# "hal/src/hal_io.o" \
-# "samv71b/gcc/gcc/startup_samv71q21b.o" \
-# "atmel_start.o" \
-# "hpl/uart/hpl_uart.o" \
-# "hal/utils/src/utils_syscalls.o" \
-# "hal/src/hal_delay.o" \
-# "hpl/core/hpl_init.o" \
-# "hal/utils/src/utils_list.o" \
-# "hal/utils/src/utils_assert.o" \
-# "hpl/afec/hpl_afec.o" \
-# "hal/src/hal_usart_sync.o" \
-# "hpl/pmc/hpl_pmc.o" \
-# "samv71b/gcc/system_samv71q21b.o" \
-# "hal/src/hal_init.o" \
-# "main.o" \
-# "examples/driver_examples.o" \
-# "driver_init.o" \
-# "hal/src/hal_adc_sync.o" \
-# "hal/utils/src/utils_ringbuffer.o" \
-# "hal/src/hal_gpio.o" \
-# "hal/utils/src/utils_event.o" \
-# "hal/src/hal_sleep.o" \
-# "hpl/pmc/hpl_sleep.o" \
-# "hpl/core/hpl_core_m7_base.o" \
-# "hal/src/hal_atomic.o" \
-# "hpl/xdmac/hpl_xdmac.o"
+"../../xdk-asf/samv71/syscalls/gcc/syscalls.o" \
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o"
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
@@ -126,58 +60,14 @@ DIR_INCLUDES +=  \
 -I"../../xdk-asf/samv71/cmsis/samv71/source" \
 -I"../../xdk-asf/thirdparty/cmsis/include"
 
-# DIR_INCLUDES +=  \
-# -I"../" \
-# -I"../config" \
-# -I"../examples" \
-# -I"../hal/include" \
-# -I"../hal/utils/include" \
-# -I"../hpl/afec" \
-# -I"../hpl/core" \
-# -I"../hpl/pio" \
-# -I"../hpl/pmc" \
-# -I"../hpl/uart" \
-# -I"../hpl/xdmac" \
-# -I"../hri" \
-# -I"../" \
-# -I"../CMSIS/Core/Include" \
-# -I"../samv71b/include"
-
 # List the dependency files
 DEPS := $(OBJS:%.o=%.d)
 
 DEPS_AS_ARGS +=  \
 "../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.d" \
 "../main.d" \
-"../../xdk-asf/samv71/syscalls/gcc/syscalls.d"
-
-# DEPS_AS_ARGS +=  \
-# "hal/src/hal_gpio.d" \
-# "hal/src/hal_io.d" \
-# "samv71b/gcc/gcc/startup_samv71q21b.d" \
-# "hpl/uart/hpl_uart.d" \
-# "hal/utils/src/utils_syscalls.d" \
-# "hpl/xdmac/hpl_xdmac.d" \
-# "hal/utils/src/utils_list.d" \
-# "hal/utils/src/utils_assert.d" \
-# "hal/src/hal_delay.d" \
-# "hpl/core/hpl_init.d" \
-# "samv71b/gcc/system_samv71q21b.d" \
-# "hal/src/hal_init.d" \
-# "hal/src/hal_usart_sync.d" \
-# "hpl/afec/hpl_afec.d" \
-# "hpl/pmc/hpl_pmc.d" \
-# "driver_init.d" \
-# "hal/src/hal_adc_sync.d" \
-# "main.d" \
-# "examples/driver_examples.d" \
-# "hal/src/hal_sleep.d" \
-# "hal/utils/src/utils_ringbuffer.d" \
-# "hal/utils/src/utils_event.d" \
-# "atmel_start.d" \
-# "hal/src/hal_atomic.d" \
-# "hpl/core/hpl_core_m7_base.d" \
-# "hpl/pmc/hpl_sleep.d"
+"../../xdk-asf/samv71/syscalls/gcc/syscalls.d" \
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d"
 
 OUTPUT_FILE_NAME :=application_samv71
 QUOTE := "
@@ -199,8 +89,8 @@ $(OUTPUT_FILE_PATH): $(OBJS)
 	$(QUOTE)arm-none-eabi-gcc$(QUOTE) -o $(OUTPUT_FILE_NAME).elf $(OBJS_AS_ARGS) -Wl,--start-group -lm -Wl,--end-group -mthumb \
 -Wl,-Map="$(OUTPUT_FILE_NAME).map" --specs=nano.specs -Wl,--gc-sections -mcpu=cortex-m7 \
  \
--T"../../xdk-asf/samd21/linker_scripts/samv71q21b_flash.ld" \
--L"../../xdk-asf/samd21/linker_scripts"
+-T"../../xdk-asf/samv71/linker_scripts/samv71q21b_flash.ld" \
+-L"../../xdk-asf/samv71/linker_scripts"
 	@echo Finished building target: $@
 
 	"arm-none-eabi-objcopy" -O binary "$(OUTPUT_FILE_NAME).elf" "$(OUTPUT_FILE_NAME).bin"

@@ -31,18 +31,21 @@ endif
 SUB_DIRS +=  \
 .. \
 ../../xdk-asf/samd21/cmsis/samd21/source \
-../../xdk-asf/samd21/syscalls/gcc
+../../xdk-asf/samd21/syscalls/gcc \
+../../xdk-asf/common/interrupt
 
 # List the object files
 OBJS +=  \
 ../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o \
 ../main.o \
-../../xdk-asf/samd21/syscalls/gcc/syscalls.o
+../../xdk-asf/samd21/syscalls/gcc/syscalls.o \
+../../xdk-asf/common/interrupt/interrupt_sam_nvic.o
 
 OBJS_AS_ARGS +=  \
 "../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o" \
 "../main.o" \
-"../../xdk-asf/samd21/syscalls/gcc/syscalls.o"
+"../../xdk-asf/samd21/syscalls/gcc/syscalls.o" \
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o"
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
@@ -63,7 +66,8 @@ DEPS := $(OBJS:%.o=%.d)
 DEPS_AS_ARGS +=  \
 "../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.d" \
 "../main.d" \
-"../../xdk-asf/samd21/syscalls/gcc/syscalls.d"
+"../../xdk-asf/samd21/syscalls/gcc/syscalls.d" \
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d"
 
 OUTPUT_FILE_NAME :=application_samd21
 QUOTE := "
