@@ -32,20 +32,23 @@ SUB_DIRS +=  \
 .. \
 ../../xdk-asf/samv71/cmsis/samv71/source \
 ../../xdk-asf/samv71/syscalls/gcc \
-../../xdk-asf/common/interrupt
+../../xdk-asf/common/interrupt \
+../../BSP/src/samv71
 
 # List the object files
 OBJS +=  \
 ../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o \
 ../main.o \
 ../../xdk-asf/samv71/syscalls/gcc/syscalls.o \
-../../xdk-asf/common/interrupt/interrupt_sam_nvic.o
+../../xdk-asf/common/interrupt/interrupt_sam_nvic.o \
+../../BSP/src/samv71/pio_driver.o
 
 OBJS_AS_ARGS +=  \
 "../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o" \
 "../main.o" \
 "../../xdk-asf/samv71/syscalls/gcc/syscalls.o" \
-"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o"
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o" \
+"../../BSP/src/samv71/pio_driver.o"
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
@@ -58,7 +61,9 @@ DIR_INCLUDES +=  \
 -I"../../xdk-asf/samv71/header_files" \
 -I"../../xdk-asf/samv71/cmsis/samv71/include" \
 -I"../../xdk-asf/samv71/cmsis/samv71/source" \
--I"../../xdk-asf/thirdparty/cmsis/include"
+-I"../../xdk-asf/thirdparty/cmsis/include" \
+-I"../../BSP/interfaces" \
+-I"../../BSP/src/"
 
 # List the dependency files
 DEPS := $(OBJS:%.o=%.d)
@@ -67,7 +72,8 @@ DEPS_AS_ARGS +=  \
 "../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.d" \
 "../main.d" \
 "../../xdk-asf/samv71/syscalls/gcc/syscalls.d" \
-"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d"
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d" \
+"../../BSP/src/samv71/pio_driver.d"
 
 OUTPUT_FILE_NAME :=application_samv71
 QUOTE := "

@@ -6,6 +6,7 @@
 #elif defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
 #include "samv71.h"
 #include "fpu.h"
+#include "samv71/pio_driver.h"
 #else
   #error Library does not support the specified device.
 #endif
