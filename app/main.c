@@ -8,9 +8,10 @@ static void pmc_init(void);
 static void pmc_enable_peripheral_clock(uint32_t pid);
 
 static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count);
-static void pio_init();
+static void pio_init(void);
 
 static void usart_clock_init(void);
+static void usart_init(void);
 
 static void adc_clock_init(void);
 
@@ -165,8 +166,9 @@ static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count)
     }
 }
 
-static void pio_init()
+static void pio_init(void)
 {
+    uint32_t temp;
     // Enableing and muxing
     // PIO_PER (PIO enable register) - controls if PIO is in control of the IO line, 1 means control by PIO
     // PIO_PDR (PIO disable register)
@@ -212,11 +214,48 @@ static void pio_init()
     PIOC->PIO_CODR |= PIO_PC10; // Clear output
     PIOC->PIO_OER |= PIO_PC10; //  Enable output
     PIOC->PIO_PER |= PIO_PC10; // I/O mode
+
+    // TODO: Need to look at this
+    // if ((enum gpio_port)port == GPIO_PORTB) {
+	// 	if ((pin == 4) || (pin == 5) || (pin == 6) || (pin == 7) || (pin == 12)) {
+	// 		hri_matrix_set_CCFG_SYSIO_reg(MATRIX, (0x1 << pin));
+	// 	}
+	// }
+
+    // PA9 UART0 Rx (Peripheral function A)
+    temp = PIOA->PIO_ABCDSR[0];
+    temp &= ~PIO_PA9;
+    PIOA->PIO_ABCDSR[0] = temp;
+
+    temp = PIOA->PIO_ABCDSR[1];
+    temp &= ~PIO_PA9;
+    PIOA->PIO_ABCDSR[1] = temp;
+
+    PIOA->PIO_PDR |= PIO_PA9; // peripheral mode
+
+    // PA10 UART0 Tx (Peripheral function A)
+    temp = PIOA->PIO_ABCDSR[0];
+    temp &= ~PIO_PA10;
+    PIOA->PIO_ABCDSR[0] = temp;
+
+    temp = PIOA->PIO_ABCDSR[1];
+    temp &= ~PIO_PA10;
+    PIOA->PIO_ABCDSR[1] = temp;
+
+    PIOA->PIO_PDR |= PIO_PA10; // peripheral mode
+
+    // PB1 AFEC 1 Channel 0 (dont select peripheral function, just set as PIO)
+    PIOB->PIO_PER |= PIO_PB1; // I/O mode
 }
 
 static void usart_clock_init(void)
 {
     pmc_enable_peripheral_clock(ID_UART0);
+}
+
+static void usart_init(void)
+{
+
 }
 
 static void adc_clock_init(void)
