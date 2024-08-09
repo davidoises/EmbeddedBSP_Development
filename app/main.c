@@ -17,6 +17,8 @@ static uint32_t usart_write(const uint8_t *buffer, const uint16_t length);
 static uint32_t usart_read(uint8_t *buffer, const uint16_t length);
 
 static void adc_clock_init(void);
+static void adc_init(void);
+static void adc_enable(void);
 
 
 static void delay(int n);
@@ -36,12 +38,13 @@ int main()
 
     // Configure peripherals
     uart_init();
-    // adc_init();
+    adc_init();
 
     pio_init();
 
     // Start peripheral operation
     uart_enable();
+    adc_enable();
 
     while(1)
     {
@@ -344,6 +347,34 @@ static uint32_t usart_read(uint8_t *buffer, const uint16_t length)
 static void adc_clock_init(void)
 {
     pmc_enable_peripheral_clock(ID_AFEC1);
+}
+
+static void adc_init(void)
+{
+    // Recommended transfer period
+    // 64 AFE perios for start up time
+    // Free run
+    // Only software trigger
+    AFEC1->AFEC_MR = (uint32_t)((AFEC_MR_TRANSFER(2)) | (AFEC_MR_TRACKTIM(15)) | (AFEC_MR_ONE) | (AFEC_MR_STARTUP_SUT64) | (AFEC_MR_PRESCAL(0x31)) | (AFEC_MR_FREERUN_ON) | (AFEC_MR_TRGSEL_AFEC_TRIG0) | (AFEC_MR_TRGEN_DIS));
+
+    // Single trigger mode
+    // Apend channel number to conversion result
+    AFEC1->AFEC_EMR = (uint32_t)((AFEC_EMR_STM) | (AFEC_EMR_TAG));
+
+	// Bias current control setting = 1
+    // Programmable gain amplifiers 0 and 1 are on
+    AFEC1->AFEC_ACR = (uint32_t)(AFEC_ACR_IBCTL(0x1) | (AFEC_ACR_PGA0EN | AFEC_ACR_PGA1EN));
+
+    // Set the offset compensation to 512, mid value of the DAC in the AFEC
+    // Only for channel 0 since this is the one we are measuring
+    AFEC1->AFEC_CSELR = 0;
+    AFEC1->AFEC_COCR = 0x200;
+}
+
+static void adc_enable(void)
+{
+    // Enabling channel 0
+    AFEC1->AFEC_CHER = (1 << 0);
 }
 
 static void delay(int n)
