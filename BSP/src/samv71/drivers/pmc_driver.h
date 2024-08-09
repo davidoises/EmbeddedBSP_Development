@@ -1,8 +1,6 @@
 #ifndef _PMC_DRIVER_H_
 #define _PMC_DRIVER_H_
 
-#include "mcu.h"
-
-void pmc_enable_peripheral_clock(uint32_t pid);
+#include "pmc_driver_interface.h"
 
 #endif // _PMC_DRIVER_H_

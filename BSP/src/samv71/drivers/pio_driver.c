@@ -10,6 +10,7 @@ static void pio_driver_init(void);
 static void pio_driver_clock_init(void);
 
 extern const uint16_t pio_pids[PIO_PID_COUNT];
+extern const struct pmc_driver_interface pmc_driver;
 
 extern const struct pio_driver_interface pio_driver;
 const struct pio_driver_interface pio_driver = {
@@ -104,10 +105,8 @@ static void pio_driver_init(void)
 
 static void pio_driver_clock_init(void)
 {
-    // uint16_t pio_count = sizeof(pio_pids)/sizeof(pio_pids[0]);
-
     for (uint16_t i = 0; i < PIO_PID_COUNT; i++)
     {
-        pmc_enable_peripheral_clock(pio_pids[i]);
+        pmc_driver.enable_peripheral_clock(pio_pids[i]);
     }
 }

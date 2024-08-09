@@ -7,6 +7,7 @@
 #include "samv71.h"
 #include "fpu.h"
 #include "samv71/drivers/pio_driver.h"
+#include "samv71/drivers/pmc_driver.h"
 #else
   #error Library does not support the specified device.
 #endif
