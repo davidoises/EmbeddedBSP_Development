@@ -12,6 +12,7 @@
 
 
 static void system_init(void);
+static void pmc_init(void);
 
 
 static void delay(int n);
@@ -20,6 +21,14 @@ int main()
 {
 
     system_init();
+
+    // usart_clock_init();
+    // adc_clock_init();
+
+    // usart_init();
+    // adc_init();
+
+    // ports_init();
 
     while(1)
     {
@@ -48,25 +57,74 @@ int main()
 static void system_init(void)
 {
     // FPU enable
-    #if defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
-    // // https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ApplicationNotes/ApplicationNotes/Atmel-44047-Cortex-M7-Microcontroller-Optimize-Usage-SAM-V71-V70-E70-S70-Architecture_Application-note.pdf
+    // https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ApplicationNotes/ApplicationNotes/Atmel-44047-Cortex-M7-Microcontroller-Optimize-Usage-SAM-V71-V70-E70-S70-Architecture_Application-note.pdf
     fpu_enable();
-    #endif
 
     // Configure the wait states of the Embedded Flash Controller
-    // CONF_EFC_WAIT_STATE = 6
-    // hri_efc_write_EEFC_FMR_FWS_bf(EFC, CONF_EFC_WAIT_STATE);
+    // Rerence uses 5 instead of 6 but following Atmel Start example
+    EFC->EEFC_FMR =  EEFC_FMR_FWS(6);
 
-    // Set the clocks, 8MHZ source just change the prescaler to 1 instead of 8
-	// SYSCTRL->OSC8M.bit.PRESC = 0;
+    // Initialize system clocks
+    pmc_init();
 
-    // usart_clock_init();
-    // adc_clock_init();
+    // Disable watchdog
+    WDT->WDT_MR |= WDT_MR_WDDIS;
+}
 
-    // usart_init();
-    // adc_init();
+static void pmc_init(void)
+{
+    // Used to hold values and modify as needed before writing
+    uint32_t temp;
 
-    // ports_init();
+    // Section 31.17 datasheet
+    // Configure XOSC20M -> MAIN CLOCK
+    // Note: CKGR_MOR requires to always have the key PASSWD written to it
+    // 2. enable the main cystal oscillator
+    temp = PMC->CKGR_MOR;
+    // Cleaer the MOSCXTBY bit (standby)
+    temp &= ~CKGR_MOR_MOSCXTBY;
+    // Enable
+    temp |= CKGR_MOR_MOSCXTEN;
+    // CONF_XOSC20M_STARTUP_TIME = 62
+    temp |= CKGR_MOR_MOSCXTST(62);
+    // Add the pasword
+    temp |= CKGR_MOR_KEY_PASSWD;
+    PMC->CKGR_MOR = temp;
+    // Wait for the oscillator to stabilize
+    while (!(PMC->PMC_SR && PMC_SR_MOSCXTS)){}
+
+    // 3. Setting MAINCK to use the main crystal oscillator
+    PMC->CKGR_MOR |= (CKGR_MOR_KEY_PASSWD | CKGR_MOR_MOSCSEL);
+
+    // 4. wait to confirm the change is good
+    while (!(PMC->PMC_SR && PMC_SR_MOSCSELS)){}
+
+    // Section 31.17 datasheet
+    // 6. Configure MAIN CLOCK -> PLLA
+    // Note: CKGR_PLLAR requires to always have 1 written to it on bit 29 (CKGR_PLLAR_ONE)
+    PMC->CKGR_PLLAR = (CKGR_PLLAR_MULA((25-1)) | CKGR_PLLAR_DIVA(1) | CKGR_PLLAR_PLLACOUNT(63) | CKGR_PLLAR_ONE);
+    // Wait for PLLA to stabilize
+    while (!(PMC->PMC_SR && PMC_SR_LOCKA)){}
+
+    // Section 31.17 datasheet
+    // 7. Configure PLLA -> Mater Clock
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_PRES_Msk;
+    temp |= PMC_MCKR_PRES(0);
+    PMC->PMC_MCKR = temp; // Prescaler of 1
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_MDIV_Msk;
+    temp |= PMC_MCKR_MDIV(0);
+    PMC->PMC_MCKR = temp; // Divider of 1
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_CSS_Msk;
+    temp |= PMC_MCKR_CSS_PLLA_CLK;
+    PMC->PMC_MCKR = temp; // Select the PLLA
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
 }
 
 static void delay(int n)
