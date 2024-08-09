@@ -49,7 +49,7 @@ OBJS_AS_ARGS +=  \
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
--I"." \
+-I".." \
 -I"../../xdk-asf/common" \
 -I"../../xdk-asf/common/interrupt" \
 -I"../../xdk-asf/samd21" \
