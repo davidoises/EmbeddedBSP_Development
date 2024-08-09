@@ -32,20 +32,29 @@ SUB_DIRS +=  \
 .. \
 ../../xdk-asf/samd21/cmsis/samd21/source \
 ../../xdk-asf/samd21/syscalls/gcc \
-../../xdk-asf/common/interrupt
+../../xdk-asf/common/interrupt \
+../../BSP/src/samd21/drivers
 
 # List the object files
 OBJS +=  \
 ../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o \
 ../main.o \
 ../../xdk-asf/samd21/syscalls/gcc/syscalls.o \
-../../xdk-asf/common/interrupt/interrupt_sam_nvic.o
+../../xdk-asf/common/interrupt/interrupt_sam_nvic.o \
+../../BSP/src/samd21/drivers/pio_driver.o \
+../../BSP/src/samd21/drivers/pmc_driver.o \
+../../BSP/src/samd21/drivers/adc_driver.o \
+../../BSP/src/samd21/drivers/uart_driver.o
 
 OBJS_AS_ARGS +=  \
 "../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o" \
 "../main.o" \
 "../../xdk-asf/samd21/syscalls/gcc/syscalls.o" \
-"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o"
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.o" \
+"../../BSP/src/samd21/drivers/pio_driver.o" \
+"../../BSP/src/samd21/drivers/pmc_driver.o" \
+"../../BSP/src/samd21/drivers/adc_driver.o" \
+"../../BSP/src/samd21/drivers/uart_driver.o"
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
@@ -58,7 +67,9 @@ DIR_INCLUDES +=  \
 -I"../../xdk-asf/samd21/header_files" \
 -I"../../xdk-asf/samd21/cmsis/samd21/include" \
 -I"../../xdk-asf/samd21/cmsis/samd21/source" \
--I"../../xdk-asf/thirdparty/cmsis/include"
+-I"../../xdk-asf/thirdparty/cmsis/include" \
+-I"../../BSP/interfaces" \
+-I"../../BSP/src/"
 
 # List the dependency files
 DEPS := $(OBJS:%.o=%.d)
@@ -67,7 +78,12 @@ DEPS_AS_ARGS +=  \
 "../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.d" \
 "../main.d" \
 "../../xdk-asf/samd21/syscalls/gcc/syscalls.d" \
-"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d"
+"../../xdk-asf/common/interrupt/interrupt_sam_nvic.d" \
+"../../BSP/src/samd21/drivers/pio_driver.d" \
+"../../BSP/src/samd21/config/pio_config.d" \
+"../../BSP/src/samd21/drivers/pmc_driver.d" \
+"../../BSP/src/samd21/drivers/adc_driver.d" \
+"../../BSP/src/samd21/drivers/uart_driver.d"
 
 OUTPUT_FILE_NAME :=application_samd21
 QUOTE := "
