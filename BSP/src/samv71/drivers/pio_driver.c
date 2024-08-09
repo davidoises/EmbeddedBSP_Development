@@ -7,10 +7,10 @@
 
 static void pio_driver_init(void);
 static void pio_driver_clock_init(void);
-static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode);
-static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode);
-static bool get_io_level(const enum gpio_port port, const uint8_t pin);
-static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level);
+static void mode_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_mode mode);
+static void pull_up_down_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_pull_mode mode);
+static bool get_io_level(const enum gpio_port port, const uint32_t pin);
+static void set_io_level(const enum gpio_port port, const uint32_t pin, const bool level);
 
 extern const uint16_t pio_pids[PIO_PID_COUNT];
 extern const struct pmc_driver_interface pmc_driver;
@@ -71,49 +71,49 @@ static void pio_driver_init(void)
 
     // PIO_PDSR ( Data status register) - reads the value on the line regardless of the configuration
 
-    uint32_t temp;
+    // uint32_t temp;
 
-    // PB12 input with pull up
-    MATRIX->CCFG_SYSIO |= PIO_PB12;
-    PIOB->PIO_ODR |= PIO_PB12; //  Disable output
-    PIOB->PIO_PPDDR |= PIO_PB12; // Disable pulldown
-    PIOB->PIO_PUER |= PIO_PB12; // Enable Pull up
-    PIOB->PIO_PER |= PIO_PB12; // I/O mode
+    // // PB12 input with pull up
+    // MATRIX->CCFG_SYSIO |= PIO_PB12;
+    // PIOB->PIO_ODR |= PIO_PB12; //  Disable output
+    // PIOB->PIO_PPDDR |= PIO_PB12; // Disable pulldown
+    // PIOB->PIO_PUER |= PIO_PB12; // Enable Pull up
+    // PIOB->PIO_PER |= PIO_PB12; // I/O mode
 
-    // PC9 output, start as low output
-    PIOC->PIO_CODR |= PIO_PC9; // Clear output
-    PIOC->PIO_OER |= PIO_PC9; //  Enable output
-    PIOC->PIO_PER |= PIO_PC9; // I/O mode
+    // // PC9 output, start as low output
+    // PIOC->PIO_CODR |= PIO_PC9; // Clear output
+    // PIOC->PIO_OER |= PIO_PC9; //  Enable output
+    // PIOC->PIO_PER |= PIO_PC9; // I/O mode
 
-    // PC10 output, start as low output
-    PIOC->PIO_CODR |= PIO_PC10; // Clear output
-    PIOC->PIO_OER |= PIO_PC10; //  Enable output
-    PIOC->PIO_PER |= PIO_PC10; // I/O mode
+    // // PC10 output, start as low output
+    // PIOC->PIO_CODR |= PIO_PC10; // Clear output
+    // PIOC->PIO_OER |= PIO_PC10; //  Enable output
+    // PIOC->PIO_PER |= PIO_PC10; // I/O mode
 
-    // PA9 UART0 Rx (Peripheral function A)
-    temp = PIOA->PIO_ABCDSR[0];
-    temp &= ~PIO_PA9;
-    PIOA->PIO_ABCDSR[0] = temp;
+    // // PA9 UART0 Rx (Peripheral function A)
+    // temp = PIOA->PIO_ABCDSR[0];
+    // temp &= ~PIO_PA9;
+    // PIOA->PIO_ABCDSR[0] = temp;
 
-    temp = PIOA->PIO_ABCDSR[1];
-    temp &= ~PIO_PA9;
-    PIOA->PIO_ABCDSR[1] = temp;
+    // temp = PIOA->PIO_ABCDSR[1];
+    // temp &= ~PIO_PA9;
+    // PIOA->PIO_ABCDSR[1] = temp;
 
-    PIOA->PIO_PDR |= PIO_PA9; // peripheral mode
+    // PIOA->PIO_PDR |= PIO_PA9; // peripheral mode
 
-    // PA10 UART0 Tx (Peripheral function A)
-    temp = PIOA->PIO_ABCDSR[0];
-    temp &= ~PIO_PA10;
-    PIOA->PIO_ABCDSR[0] = temp;
+    // // PA10 UART0 Tx (Peripheral function A)
+    // temp = PIOA->PIO_ABCDSR[0];
+    // temp &= ~PIO_PA10;
+    // PIOA->PIO_ABCDSR[0] = temp;
 
-    temp = PIOA->PIO_ABCDSR[1];
-    temp &= ~PIO_PA10;
-    PIOA->PIO_ABCDSR[1] = temp;
+    // temp = PIOA->PIO_ABCDSR[1];
+    // temp &= ~PIO_PA10;
+    // PIOA->PIO_ABCDSR[1] = temp;
 
-    PIOA->PIO_PDR |= PIO_PA10; // peripheral mode
+    // PIOA->PIO_PDR |= PIO_PA10; // peripheral mode
 
-    // PB1 AFEC 1 Channel 0 (dont select peripheral function, just set as PIO)
-    PIOB->PIO_PER |= PIO_PB1; // I/O mode
+    // // PB1 AFEC 1 Channel 0 (dont select peripheral function, just set as PIO)
+    // PIOB->PIO_PER |= PIO_PB1; // I/O mode
 }
 
 static void pio_driver_clock_init(void)
@@ -124,22 +124,130 @@ static void pio_driver_clock_init(void)
     }
 }
 
-static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode)
+static void mode_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_mode mode)
+{
+    uint32_t temp;
+
+    Pio *const PIO_REG = port_to_reg(port);
+
+    if (port == GPIO_PORTB)
+    {
+        if ((pin == PIO_PB4) || (pin == PIO_PB5) || (pin == PIO_PB6) || (pin == PIO_PB7) || (pin == PIO_PB12)) {
+			MATRIX->CCFG_SYSIO |= PIO_PB12;
+		}
+    }
+
+    switch (mode)
+    {
+	    case GPIO_DIRECTION_OFF:
+	    case GPIO_DIRECTION_IN:
+            PIO_REG->PIO_ODR |= pin; //  Disable output
+            PIO_REG->PIO_PER |= pin; // I/O mode
+		    break;
+
+	    case GPIO_DIRECTION_OUT:
+		    PIO_REG->PIO_OER |= pin; // Enable ouput
+            PIO_REG->PIO_PER |= pin; // I/O mode
+		    break;
+
+	    case GPIO_PERIPH_A:
+            // bit0: 0
+            temp = PIO_REG->PIO_ABCDSR[0];
+            temp &= ~pin;
+            PIO_REG->PIO_ABCDSR[0] = temp;
+
+            // bit1: 0
+            temp = PIO_REG->PIO_ABCDSR[1];
+            temp &= ~pin;
+            PIO_REG->PIO_ABCDSR[1] = temp;
+
+            PIO_REG->PIO_PDR |= pin; // peripheral mode
+            break;
+
+        case GPIO_PERIPH_B:
+            // bit0: 1
+            temp = PIO_REG->PIO_ABCDSR[0];
+            temp |= pin;
+            PIO_REG->PIO_ABCDSR[0] = temp;
+
+            // bit1: 0
+            temp = PIO_REG->PIO_ABCDSR[1];
+            temp &= ~pin;
+            PIO_REG->PIO_ABCDSR[1] = temp;
+
+            PIO_REG->PIO_PDR |= pin; // peripheral mode
+            break;
+
+        case GPIO_PERIPH_C:
+            // bit0: 0
+            temp = PIO_REG->PIO_ABCDSR[0];
+            temp &= ~pin;
+            PIO_REG->PIO_ABCDSR[0] = temp;
+
+            // bit1: 1
+            temp = PIO_REG->PIO_ABCDSR[1];
+            temp |= pin;
+            PIO_REG->PIO_ABCDSR[1] = temp;
+
+            PIO_REG->PIO_PDR |= pin; // peripheral mode
+            break;
+
+        case GPIO_PERIPH_D:
+            // bit0: 0
+            temp = PIO_REG->PIO_ABCDSR[0];
+            temp |= pin;
+            PIO_REG->PIO_ABCDSR[0] = temp;
+
+            // bit1: 1
+            temp = PIO_REG->PIO_ABCDSR[1];
+            temp |= pin;
+            PIO_REG->PIO_ABCDSR[1] = temp;
+
+            PIO_REG->PIO_PDR |= pin; // peripheral mode
+            break;
+	}
+}
+
+static void pull_up_down_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_pull_mode mode)
 {
     Pio *const PIO_REG = port_to_reg(port);
+
+    switch (mode)
+    {
+        case GPIO_PULL_OFF:
+            PIO_REG->PIO_PPDDR |= pin; // Disable pulldown
+            PIO_REG->PIO_PUDR |= pin; // Disable Pull up
+            break;
+
+        case GPIO_PULL_UP:
+            PIO_REG->PIO_PPDDR |= pin; // Disable pulldown
+            PIO_REG->PIO_PUER |= pin; // Enable Pull up
+            break;
+
+        case GPIO_PULL_DOWN:
+            PIO_REG->PIO_PPDER |= pin; // Enable pulldown
+            PIO_REG->PIO_PUDR |= pin; // Disable Pull up
+            break;
+	}
+
 }
 
-static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode)
+static bool get_io_level(const enum gpio_port port, const uint32_t pin)
 {
+    Pio *const PIO_REG = port_to_reg(port);
 
+    return ((PIO_REG->PIO_PDSR & pin) > 0);
 }
 
-static bool get_io_level(const enum gpio_port port, const uint8_t pin)
+static void set_io_level(const enum gpio_port port, const uint32_t pin, const bool level)
 {
-    return false;
-}
+    Pio *const PIO_REG = port_to_reg(port);
 
-static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level)
-{
-
+    if (level)
+    {
+        PIO_REG->PIO_SODR |= pin;
+	} else
+    {
+		PIO_REG->PIO_CODR |= pin;
+	}
 }

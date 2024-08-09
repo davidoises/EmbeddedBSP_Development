@@ -6,10 +6,10 @@
 
 static void pio_driver_init(void);
 static void pio_driver_clock_init(void);
-static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode);
-static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode);
-static bool get_io_level(const enum gpio_port port, const uint8_t pin);
-static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level);
+static void mode_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_mode mode);
+static void pull_up_down_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_pull_mode mode);
+static bool get_io_level(const enum gpio_port port, const uint32_t pin);
+static void set_io_level(const enum gpio_port port, const uint32_t pin, const bool level);
 
 extern const struct pmc_driver_interface pmc_driver;
 
@@ -57,23 +57,29 @@ static void pio_driver_clock_init(void)
     __asm("nop");
 }
 
-static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode)
+static void mode_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_mode mode)
 {
     // TODO
 }
 
-static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode)
+static void pull_up_down_configuration(const enum gpio_port port, const uint32_t pin, const enum gpio_pull_mode mode)
 {
     // TODO
 }
 
-static bool get_io_level(const enum gpio_port port, const uint8_t pin)
+static bool get_io_level(const enum gpio_port port, const uint32_t pin)
 {
     // TODO
     return false;
 }
 
-static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level)
+static void set_io_level(const enum gpio_port port, const uint32_t pin, const bool level)
 {
-    // TODO
+    if (level)
+    {
+        PORT->Group[port].OUT.reg |= pin;
+	} else
+    {
+		PORT->Group[port].OUT.reg &= ~pin;
+	}
 }
