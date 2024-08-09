@@ -3,9 +3,7 @@
 
 #include "mcu.h"
 
-#define PIO_PID_COUNT 2
-
-#define LED_PORT GPIO_PORTC
-#define LED_PIN PIO_PC9
+#define LED_PORT GPIO_PORTB
+#define LED_PIN PORT_PB03
 
 #endif // _PIO_CONFIG_H_
