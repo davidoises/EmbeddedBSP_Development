@@ -1,6 +1,8 @@
 #ifndef _MCU_H_
 #define _MCU_H_
 
+#include <stdbool.h>
+
 #if defined(__SAMD21G18A__) || defined(__ATSAMD21G18A__)
 #include "samd21.h"
 #include "samd21/drivers/pio_driver.h"

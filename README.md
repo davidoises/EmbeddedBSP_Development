@@ -26,3 +26,7 @@ To build, go to the app folder and run one of the following commands:
 **make samd21**
 
 **make samv71**
+
+## Flashing
+
+Any method for flashing Atmel MCUs should work. This was tested with the embedded debug probe on the ATSAMD21 Explained Pro and using MPLAB Programming Tool from Atmel.

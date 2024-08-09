@@ -7,6 +7,10 @@
 
 static void pio_driver_init(void);
 static void pio_driver_clock_init(void);
+static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode);
+static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode);
+static bool get_io_level(const enum gpio_port port, const uint8_t pin);
+static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level);
 
 extern const uint16_t pio_pids[PIO_PID_COUNT];
 extern const struct pmc_driver_interface pmc_driver;
@@ -15,7 +19,17 @@ extern const struct pio_driver_interface pio_driver;
 const struct pio_driver_interface pio_driver = {
     .init = &pio_driver_init,
     .clock_init = &pio_driver_clock_init,
+    .mode_configuration = &mode_configuration,
+    .pull_up_down_configuration = &pull_up_down_configuration,
+    .get_io_level = &get_io_level,
+    .set_io_level = &set_io_level,
 };
+
+static inline Pio *port_to_reg(const enum gpio_port port)
+{
+	/* PIO instance offset is 0x200 */
+	return (Pio *)((uint32_t)PIOA + port * 0x200);
+}
 
 static void pio_driver_init(void)
 {
@@ -108,4 +122,24 @@ static void pio_driver_clock_init(void)
     {
         pmc_driver.enable_peripheral_clock(pio_pids[i]);
     }
+}
+
+static void mode_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_direction mode)
+{
+    Pio *const PIO_REG = port_to_reg(port);
+}
+
+static void pull_up_down_configuration(const enum gpio_port port, const uint8_t pin, const enum gpio_pull_mode mode)
+{
+
+}
+
+static bool get_io_level(const enum gpio_port port, const uint8_t pin)
+{
+    return false;
+}
+
+static void set_io_level(const enum gpio_port port, const uint8_t pin, const bool level)
+{
+
 }
