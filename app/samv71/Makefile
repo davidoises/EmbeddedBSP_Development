@@ -33,7 +33,8 @@ SUB_DIRS +=  \
 ../../xdk-asf/samv71/cmsis/samv71/source \
 ../../xdk-asf/samv71/syscalls/gcc \
 ../../xdk-asf/common/interrupt \
-../../BSP/src/samv71
+../../BSP/src/samv71/drivers \
+../config/samv71
 
 # List the object files
 OBJS +=  \
@@ -41,18 +42,23 @@ OBJS +=  \
 ../main.o \
 ../../xdk-asf/samv71/syscalls/gcc/syscalls.o \
 ../../xdk-asf/common/interrupt/interrupt_sam_nvic.o \
-../../BSP/src/samv71/pio_driver.o
+../../BSP/src/samv71/drivers/pio_driver.o \
+../../BSP/src/samv71/drivers/pmc_driver.o \
+../config/samv71/pio_config.o
 
 OBJS_AS_ARGS +=  \
 "../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o" \
 "../main.o" \
 "../../xdk-asf/samv71/syscalls/gcc/syscalls.o" \
 "../../xdk-asf/common/interrupt/interrupt_sam_nvic.o" \
-"../../BSP/src/samv71/pio_driver.o"
+"../../BSP/src/samv71/drivers/pio_driver.o" \
+"../../BSP/src/samv71/drivers/pmc_driver.o" \
+"../config/samv71/pio_config.o"
 
 # List the directories containing header files
 DIR_INCLUDES +=  \
--I"." \
+-I".." \
+-I"../config/samv71" \
 -I"../../xdk-asf/common" \
 -I"../../xdk-asf/common/interrupt" \
 -I"../../xdk-asf/samv71" \
@@ -73,7 +79,10 @@ DEPS_AS_ARGS +=  \
 "../main.d" \
 "../../xdk-asf/samv71/syscalls/gcc/syscalls.d" \
 "../../xdk-asf/common/interrupt/interrupt_sam_nvic.d" \
-"../../BSP/src/samv71/pio_driver.d"
+"../../BSP/src/samv71/drivers/pio_driver.d" \
+"../../BSP/src/samv71/config/pio_config.d" \
+"../../BSP/src/samv71/drivers/pmc_driver.d" \
+"../config/samv71/pio_config.d"
 
 OUTPUT_FILE_NAME :=application_samv71
 QUOTE := "
