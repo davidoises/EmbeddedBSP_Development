@@ -1,22 +1,17 @@
-
-#if defined(__SAMD21G18A__) || defined(__ATSAMD21G18A__)
-#include "samd21.h"
-#elif defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
-#include "samv71.h"
-#include "fpu.h"
-#else
-  #error Library does not support the specified device.
-#endif
-
+#include "mcu.h"
 #include <stdio.h>
 
 
 static void system_init(void);
-static void pmc_init(void);
 
+static void pmc_init(void);
 static void pmc_enable_peripheral_clock(uint32_t pid);
+
 static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count);
+static void pio_init();
+
 static void usart_clock_init(void);
+
 static void adc_clock_init(void);
 
 
@@ -36,7 +31,7 @@ int main()
     // usart_init();
     // adc_init();
 
-    // ports_init();
+    pio_init();
 
     while(1)
     {
@@ -170,6 +165,55 @@ static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count)
     }
 }
 
+static void pio_init()
+{
+    // Enableing and muxing
+    // PIO_PER (PIO enable register) - controls if PIO is in control of the IO line, 1 means control by PIO
+    // PIO_PDR (PIO disable register)
+    // PIO_PSR (PIO status register)
+    // PIO_ABCDSR0 -> 0 means A, 1 means B
+    // PIO_ABCDSR1 -> 0 means C, 1 means D
+    // Section 32.5.3 write to PIO_PDR to disable the PIO control and then write to PIO_ABCDSR0/1 to enable the corresponding muxed function
+
+    // Direction (Output vs Input)
+    // PIO_OER (Output enable register) - controls if the io is used as output, 1 means output
+    // PIO_ODR (Output disable register)
+    // PIO_OSR (Output status register)
+
+    // Pull Up
+    // PIO_PUER ( Pull Up Enable register) - controls pull up, 1 means pull up enabled
+    // PIO_PUDR ( Pull Up Disable register)
+    // PIO_PUSR ( Pull Up Status register)
+
+    // Pull Down
+    // PIO_PPDER ( Pull Down Enable register) - controls pull down, 1 means pull down enabled
+    // PIO_PPDDR ( Pull Down Disable register)
+    // PIO_PPDSR ( Pull Down Status register)
+
+    // Output control
+    // PIO_SODR ( Set Output Data register) - set the output value
+    // PIO_CODR ( Clear Output Data register) - set the output value
+    // PIO_ODSR ( Output status reigster)
+
+    // PIO_PDSR ( Data status register) - reads the value on the line regardless of the configuration
+
+    // PB12 input with pull up
+    PIOB->PIO_ODR |= PIO_PB12; //  Disable output
+    PIOB->PIO_PPDDR |= PIO_PB12; // Disable pulldown
+    PIOB->PIO_PUER |= PIO_PB12; // Enable Pull up
+    PIOB->PIO_PER |= PIO_PB12; // I/O mode
+
+    // PC9 output, start as low output
+    PIOC->PIO_CODR |= PIO_PC9; // Clear output
+    PIOC->PIO_OER |= PIO_PC9; //  Enable output
+    PIOC->PIO_PER |= PIO_PC9; // I/O mode
+
+    // PC10 output, start as low output
+    PIOC->PIO_CODR |= PIO_PC10; // Clear output
+    PIOC->PIO_OER |= PIO_PC10; //  Enable output
+    PIOC->PIO_PER |= PIO_PC10; // I/O mode
+}
+
 static void usart_clock_init(void)
 {
     pmc_enable_peripheral_clock(ID_UART0);
@@ -186,7 +230,7 @@ static void delay(int n)
 
     for (;n >0; n--)
     {
-        for (i=0;i<100;i++)
+        for (i=0;i<1000;i++)
             __asm("nop");
     }
 }
