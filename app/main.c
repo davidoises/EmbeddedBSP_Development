@@ -1,266 +1,397 @@
-
-#if defined(__SAMD21G18A__) || defined(__ATSAMD21G18A__)
-#include "samd21.h"
-#elif defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
-#include "samdv71.h"
-#else
-  #error Library does not support the specified device.
-#endif
-
+#include "mcu.h"
 #include <stdio.h>
 
+
 static void system_init(void);
-static void ports_init(void);
+
+static void pmc_init(void);
+static void pmc_enable_peripheral_clock(uint32_t pid);
+
+static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count);
+static void pio_init(void);
 
 static void usart_clock_init(void);
-static void usart_init(void);
-static void usart_start(void);
+static void uart_init(void);
+static void uart_enable(void);
 static uint32_t usart_write(const uint8_t *buffer, const uint16_t length);
+static uint32_t usart_read(uint8_t *buffer, const uint16_t length);
 
-static void adc_wait_syncbusy(void);
 static void adc_clock_init(void);
 static void adc_init(void);
-static void adc_start(void);
+static void adc_enable(void);
 static uint16_t adc_read(void);
 
+
 static void delay(int n);
+
+uint16_t pio_pids[] = {ID_PIOB, ID_PIOC};
 
 int main()
 {
 
+    // General system initialization and main clocks
     system_init();
 
-    usart_start();
+    // Enable peripheral clocks
+    pio_clock_init(pio_pids, sizeof(pio_pids)/sizeof(pio_pids[0]));
+    usart_clock_init();
+    adc_clock_init();
 
-    adc_start();
+    // Configure peripherals
+    uart_init();
+    adc_init();
+
+    pio_init();
+
+    // Start peripheral operation
+    uart_enable();
+    adc_enable();
 
     while(1)
     {
 
         uint16_t adc_reding = adc_read();
+        // uint16_t adc_reding = 5;
 
         char output_msg[100];
 		uint16_t count = sprintf(output_msg, "The ADC measurement is: %d\r\n", adc_reding);
         usart_write((uint8_t *)output_msg, count);
 
-        PORT->Group[0].OUT.reg &= ~PORT_PA27;
-        PORT->Group[1].OUT.reg &= ~PORT_PB03;
+        // PORT->Group[0].OUT.reg &= ~PORT_PA27;
+        // PORT->Group[1].OUT.reg &= ~PORT_PB03;
         delay(200);
-        PORT->Group[0].OUT.reg |= PORT_PA27;
-        PORT->Group[1].OUT.reg |= PORT_PB03;
+        // PORT->Group[0].OUT.reg |= PORT_PA27;
+        // PORT->Group[1].OUT.reg |= PORT_PB03;
         delay(100);
-        PORT->Group[0].OUT.reg &= ~PORT_PA27;
-        PORT->Group[1].OUT.reg &= ~PORT_PB03;
+        // PORT->Group[0].OUT.reg &= ~PORT_PA27;
+        // PORT->Group[1].OUT.reg &= ~PORT_PB03;
         delay(200);
-        PORT->Group[0].OUT.reg |= PORT_PA27;
-        PORT->Group[1].OUT.reg |= PORT_PB03;
+        // PORT->Group[0].OUT.reg |= PORT_PA27;
+        // PORT->Group[1].OUT.reg |= PORT_PB03;
         delay(1000);
     }
 }
 
 static void system_init(void)
 {
-    // Set the clocks, 8MHZ source just change the prescaler to 1 instead of 8
-	SYSCTRL->OSC8M.bit.PRESC = 0;
+    // FPU enable
+    // https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ApplicationNotes/ApplicationNotes/Atmel-44047-Cortex-M7-Microcontroller-Optimize-Usage-SAM-V71-V70-E70-S70-Architecture_Application-note.pdf
+    fpu_enable();
 
-    usart_clock_init();
-    adc_clock_init();
+    // Configure the wait states of the Embedded Flash Controller
+    // Rerence uses 5 instead of 6 but following Atmel Start example
+    EFC->EEFC_FMR =  EEFC_FMR_FWS(6);
 
-    usart_init();
-    adc_init();
+    // Initialize system clocks
+    pmc_init();
 
-    ports_init();
+    // Disable watchdog
+    WDT->WDT_MR |= WDT_MR_WDDIS;
 }
 
-static void ports_init(void)
+static void pmc_init(void)
 {
-    // GPIO PA27 as output
-    PORT->Group[0].DIR.reg |= PORT_PA27;
+    // Used to hold values and modify as needed before writing
+    uint32_t temp;
 
-    // GPIO PB03 as output
-    PORT->Group[1].DIR.reg |= PORT_PB03;
+    // Section 31.17 datasheet
+    // Configure XOSC20M -> MAIN CLOCK
+    // Note: CKGR_MOR requires to always have the key PASSWD written to it
+    // 2. enable the main cystal oscillator
+    temp = PMC->CKGR_MOR;
+    // Cleaer the MOSCXTBY bit (standby)
+    temp &= ~CKGR_MOR_MOSCXTBY;
+    // Enable
+    temp |= CKGR_MOR_MOSCXTEN;
+    // CONF_XOSC20M_STARTUP_TIME = 62
+    temp |= CKGR_MOR_MOSCXTST(62);
+    // Add the pasword
+    temp |= CKGR_MOR_KEY_PASSWD;
+    PMC->CKGR_MOR = temp;
+    // Wait for the oscillator to stabilize
+    while (!(PMC->PMC_SR && PMC_SR_MOSCXTS)){}
 
-    // ADC
-    // PB02 as analog (Arduino connector J2, pin 14)
-    // Enabling alternate function
-    PORT->Group[1].PINCFG[2].bit.PMUXEN = 1;
+    // 3. Setting MAINCK to use the main crystal oscillator
+    PMC->CKGR_MOR |= (CKGR_MOR_KEY_PASSWD | CKGR_MOR_MOSCSEL);
 
-    // PMUX[0] -> pins 0 and 1
-    // PMUX[1] -> pins 2 and 3
-    // B02 is an even pin
-    // Peripheral function B = AIN10
-    PORT->Group[1].PMUX[1].bit.PMUXE = 0x01;
+    // 4. wait to confirm the change is good
+    while (!(PMC->PMC_SR && PMC_SR_MOSCSELS)){}
 
-    // UART
-    // PB22 Tx, Peripheral function D = SERCOM5 PAD[2]
-    PORT->Group[1].PINCFG[22].bit.PMUXEN = 1;
-    PORT->Group[1].PMUX[11].bit.PMUXE = 0x03;
+    // Section 31.17 datasheet
+    // 6. Configure MAIN CLOCK -> PLLA
+    // Note: CKGR_PLLAR requires to always have 1 written to it on bit 29 (CKGR_PLLAR_ONE)
+    PMC->CKGR_PLLAR = (CKGR_PLLAR_MULA((25-1)) | CKGR_PLLAR_DIVA(1) | CKGR_PLLAR_PLLACOUNT(63) | CKGR_PLLAR_ONE);
+    // Wait for PLLA to stabilize
+    while (!(PMC->PMC_SR && PMC_SR_LOCKA)){}
 
-    // PB23 Rx, Peripheral function D = SERCOM5 PAD[3]
-    PORT->Group[1].PINCFG[23].bit.PMUXEN = 1;
-    PORT->Group[1].PMUX[11].bit.PMUXO = 0x03;
+    // Section 31.17 datasheet
+    // 7. Configure PLLA -> Mater Clock
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_PRES_Msk;
+    temp |= PMC_MCKR_PRES(0);
+    PMC->PMC_MCKR = temp; // Prescaler of 1
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_MDIV_Msk;
+    temp |= PMC_MCKR_MDIV(0);
+    PMC->PMC_MCKR = temp; // Divider of 1
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+
+    temp = PMC->PMC_MCKR;
+    temp &= ~PMC_MCKR_CSS_Msk;
+    temp |= PMC_MCKR_CSS_PLLA_CLK;
+    PMC->PMC_MCKR = temp; // Select the PLLA
+    while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+}
+
+static void pmc_enable_peripheral_clock(uint32_t pid)
+{
+    // Refer to section 31.20.4 for PCER0 as an example
+    // PCER0, PCSR0, PCDR0 have the same bit assignments
+    // PCER0, PCSR0, PCDR0 control clocks for perpheral IDs [7,31]
+
+    // Refer to section 31.20.23 for PCER1 as an example
+    // PCER1, PCSR1, PCDR1 have the same bit assignments
+    // PCER1, PCSR1, PCDR1 control clocks for perpheral IDs [32,62]
+
+    if (pid < 32)
+    {
+        PMC->PMC_PCER0 = (1 << pid);
+    }
+    else if (pid < 64)
+    {
+        uint32_t relative_pid = pid -32;
+        PMC->PMC_PCER1 = (1 << relative_pid);
+    }
+
+    // I2S peripherals need to follow the next steps but wont be implemented at this time
+    // In theory the previous part can also be achieved through the regiser PMC_PCR
+    // 1. Set the preripheral ID number
+    // 2. Change the CLKDIV or GCLKSS if needed. By default GCLKCSS is SLOW_CLK
+    // 3. Then set CMD = 1 (write) and EN = 1
+}
+
+static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count)
+{
+    for (uint16_t i = 0; i < pio_count; i++)
+    {
+        pmc_enable_peripheral_clock(pio_pids[i]);
+    }
+}
+
+static void pio_init(void)
+{
+    uint32_t temp;
+    // For the following PB port pins set 1 on their corresponding pin to enable the PIO functionality
+    // MATRIX->CCFG_SYSIO
+    // PB12 or ERASE
+    // PB7 or TCK/SWCLK
+    // PB6 or TMS/SWDIO
+    // PB5 or TDO/TRACESWO
+    // PB4 or TDI
+
+    // Enableing and muxing
+    // PIO_PER (PIO enable register) - controls if PIO is in control of the IO line, 1 means control by PIO
+    // PIO_PDR (PIO disable register)
+    // PIO_PSR (PIO status register)
+    // PIO_ABCDSR0 -> 0 means A, 1 means B
+    // PIO_ABCDSR1 -> 0 means C, 1 means D
+    // Section 32.5.3 write to PIO_PDR to disable the PIO control and then write to PIO_ABCDSR0/1 to enable the corresponding muxed function
+
+    // Direction (Output vs Input)
+    // PIO_OER (Output enable register) - controls if the io is used as output, 1 means output
+    // PIO_ODR (Output disable register)
+    // PIO_OSR (Output status register)
+
+    // Pull Up
+    // PIO_PUER ( Pull Up Enable register) - controls pull up, 1 means pull up enabled
+    // PIO_PUDR ( Pull Up Disable register)
+    // PIO_PUSR ( Pull Up Status register)
+
+    // Pull Down
+    // PIO_PPDER ( Pull Down Enable register) - controls pull down, 1 means pull down enabled
+    // PIO_PPDDR ( Pull Down Disable register)
+    // PIO_PPDSR ( Pull Down Status register)
+
+    // Output control
+    // PIO_SODR ( Set Output Data register) - set the output value
+    // PIO_CODR ( Clear Output Data register) - set the output value
+    // PIO_ODSR ( Output status reigster)
+
+    // PIO_PDSR ( Data status register) - reads the value on the line regardless of the configuration
+
+    // PB12 input with pull up
+    MATRIX->CCFG_SYSIO |= PIO_PB12;
+    PIOB->PIO_ODR |= PIO_PB12; //  Disable output
+    PIOB->PIO_PPDDR |= PIO_PB12; // Disable pulldown
+    PIOB->PIO_PUER |= PIO_PB12; // Enable Pull up
+    PIOB->PIO_PER |= PIO_PB12; // I/O mode
+
+    // PC9 output, start as low output
+    PIOC->PIO_CODR |= PIO_PC9; // Clear output
+    PIOC->PIO_OER |= PIO_PC9; //  Enable output
+    PIOC->PIO_PER |= PIO_PC9; // I/O mode
+
+    // PC10 output, start as low output
+    PIOC->PIO_CODR |= PIO_PC10; // Clear output
+    PIOC->PIO_OER |= PIO_PC10; //  Enable output
+    PIOC->PIO_PER |= PIO_PC10; // I/O mode
+
+    // PA9 UART0 Rx (Peripheral function A)
+    temp = PIOA->PIO_ABCDSR[0];
+    temp &= ~PIO_PA9;
+    PIOA->PIO_ABCDSR[0] = temp;
+
+    temp = PIOA->PIO_ABCDSR[1];
+    temp &= ~PIO_PA9;
+    PIOA->PIO_ABCDSR[1] = temp;
+
+    PIOA->PIO_PDR |= PIO_PA9; // peripheral mode
+
+    // PA10 UART0 Tx (Peripheral function A)
+    temp = PIOA->PIO_ABCDSR[0];
+    temp &= ~PIO_PA10;
+    PIOA->PIO_ABCDSR[0] = temp;
+
+    temp = PIOA->PIO_ABCDSR[1];
+    temp &= ~PIO_PA10;
+    PIOA->PIO_ABCDSR[1] = temp;
+
+    PIOA->PIO_PDR |= PIO_PA10; // peripheral mode
+
+    // PB1 AFEC 1 Channel 0 (dont select peripheral function, just set as PIO)
+    PIOB->PIO_PER |= PIO_PB1; // I/O mode
 }
 
 static void usart_clock_init(void)
 {
-    // Enabling the SERCOM5 clock
-    PM->APBCMASK.bit.SERCOM5_ = 1;
-
-    // Connecting Generic clock 0 as SERCOM 5 source
-    GCLK->CLKCTRL.bit.GEN = GCLK_CLKCTRL_GEN_GCLK0_Val;
-    GCLK->CLKCTRL.bit.ID = GCLK_CLKCTRL_ID_SERCOM5_CORE_Val;
-
-    // Enable it
-    GCLK->CLKCTRL.bit.CLKEN = 1;
+    pmc_enable_peripheral_clock(ID_UART0);
 }
 
-static void usart_init(void)
+static void uart_init(void)
 {
-    // INIT FOR UART FUNCTIONS
-    // The following bits are synchronized when written:
-    // - Software Reset bit in the CTRLA register (CTRLA.SWRST)
-    // - Enable bit in the CTRLA register (CTRLA.ENABLE)
-    // - Receiver Enable bit in the CTRLB register (CTRLB.RXEN)
-    // - Transmitter Enable bit in the Control B register (CTRLB.TXEN)
-    // CTRLB.RXEN is write-synchronized somewhat differently. See also 26.8.2  CTRLB for details.
+    // Set the write protection key and disable write protection
+    UART0->UART_WPMR = UART_WPMR_WPKEY_PASSWD;
 
-    if (!SERCOM5->USART.SYNCBUSY.bit.SWRST)
-    {
-        if (SERCOM5->USART.CTRLA.bit.ENABLE)
-        {
-            SERCOM5->USART.CTRLA.bit.ENABLE = 0;
-            while (SERCOM5->USART.SYNCBUSY.bit.ENABLE){}
-        }
-        SERCOM5->USART.CTRLA.bit.MODE = SERCOM_USART_CTRLA_MODE_USART_INT_CLK_Val;
-        SERCOM5->USART.CTRLA.bit.SWRST = 1;
-    }
-    while (SERCOM5->USART.SYNCBUSY.bit.SWRST){}
+    // UART_CR_RSTRX - Put the receiver into reset state
+    // UART_CR_RSTTX - Put the transmiter into reset state
+    // UART_CR_RXDIS - disable receiver
+    // UART_CR_TXDIS - disable transmiter
+    UART0->UART_CR = (UART_CR_RSTRX | UART_CR_RXDIS | UART_CR_RSTTX | UART_CR_TXDIS);
 
-    // INTERNAL CLOCK
-    SERCOM5->USART.CTRLA.bit.MODE = SERCOM_USART_CTRLA_MODE_USART_INT_CLK_Val;
-    // SYNCHRONOUS MODE (1)
-    SERCOM5->USART.CTRLA.bit.CMODE = 1;
-    // ASYNCHRONOUS MODE (0)
-    SERCOM5->USART.CTRLA.bit.CMODE = 0;
-    // SELECT RX PIN PB23 PAD[3]
-    SERCOM5->USART.CTRLA.bit.RXPO = 3;
-    // SELECT RX PIN PB22 PAD[2]
-    SERCOM5->USART.CTRLA.bit.TXPO = 1;
-    // Configure the character size (8 bits)
-    SERCOM5->USART.CTRLB.bit.CHSIZE = 0;
-    // Configure the order of the data (LSB is first)
-    SERCOM5->USART.CTRLA.bit.DORD = 1;
-    // Configure the stop bits (1 bits)
-    SERCOM5->USART.CTRLB.bit.SBMODE = 0;
-    // Configure the baud rate
-    // BAUD reg = 65536 *( 1 - 16*(115200/8000000))
-    SERCOM5->USART.BAUD.reg = 50436;
+    // UART_CR_RSTSTA - Resets PARE, FRAME, CMP, OVRE in the UART_SR register
+    UART0->UART_CR = UART_CR_RSTSTA;
 
-    // SINCE USART IS DISABLED THESE REGS ARE IMMEDIATELY WRITTEN
-    SERCOM5->USART.CTRLB.bit.TXEN = 1;
-    SERCOM5->USART.CTRLB.bit.RXEN = 1;
+    // UART_MR_BRSRCCK_PERIPH_CLK - Baud rate source clock is peripheral clock
+    // UART_MR_PAR_NO - no parity
+    // UART_MR_CHMODE_NORMAL - no testing mode
+    // UART_MR_FILTER_DISABLED - no filter
+    UART0->UART_MR = (UART_MR_BRSRCCK_PERIPH_CLK | UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL | UART_MR_FILTER_DISABLED);
+
+    // Configure the UART baud rate
+    #define CONF_UART_0_BAUD 115200
+    #define CONF_UART0_FREQUENCY 150000000
+    #define CONF_UART_0_BAUD_CD ((CONF_UART0_FREQUENCY) / CONF_UART_0_BAUD / 16)
+    UART0->UART_BRGR = UART_BRGR_CD(CONF_UART_0_BAUD_CD);
 }
 
-static void usart_start(void)
+static void uart_enable(void)
 {
-    SERCOM5->USART.CTRLA.bit.ENABLE = 1;
-    while (SERCOM5->USART.SYNCBUSY.bit.ENABLE){}
+    // Enable the receiver and transmiter
+    UART0->UART_CR = (UART_CR_RXEN | UART_CR_TXEN);
 }
 
 static uint32_t usart_write(const uint8_t *buffer, const uint16_t length)
 {
+    // writing UART
+    // data transfered to UART_THR
+    // UART_SR.TXRDY indicates that the holding register is empty
+    // UART_SR.TXEMPTY indicates that the holding register and internal shift register are empty
+
     uint32_t counter = 0;
 
-    // When DRE is 1 it means the DATA reg is ready for new data
-    while (!SERCOM5->USART.INTFLAG.bit.DRE ){}
+    while (!(UART0->UART_SR & UART_SR_TXRDY)){}
 
     while (counter < length)
     {
-        // In theory enter critical section
-        SERCOM5->USART.DATA.bit.DATA = buffer[counter];
-        // In theory exit critical section
-        while (!SERCOM5->USART.INTFLAG.bit.DRE ){}
+        // Write into the transmit hold register
+        UART0->UART_THR = UART_THR_TXCHR(buffer[counter]);
+
+        while (!(UART0->UART_SR & UART_SR_TXRDY)){}
+
         counter++;
     }
 
-    // INTFLAG.bit.TXC Can be checked to confirm transmission
-    while (!SERCOM5->USART.INTFLAG.bit.TXC ){}
+    while (!(UART0->UART_SR & UART_SR_TXEMPTY)){}
+
+    return counter;
+}
+
+static uint32_t usart_read(uint8_t *buffer, const uint16_t length)
+{
+    // reading UART
+    // data transfered to UART_RHR
+    // UART_SR.RXRDY will indicate that the data is ready and it clears on its own after reading
+    // Not implemented, for now dummy structure
+
+    uint32_t counter = 0;
+    while (counter < length)
+    {
+        buffer[counter] = 'a' + counter;
+        counter++;
+    }
+
     return counter;
 }
 
 static void adc_clock_init(void)
 {
-    // Enabling the SERCOM5 clock
-    PM->APBCMASK.bit.ADC_ = 1;
-
-    // Connecting Generic clock 0 as SERCOM 5 source
-    GCLK->CLKCTRL.bit.GEN = GCLK_CLKCTRL_GEN_GCLK0_Val;
-    GCLK->CLKCTRL.bit.ID = GCLK_CLKCTRL_ID_ADC_Val;
-
-    // Enable it
-    GCLK->CLKCTRL.bit.CLKEN = 1;
-}
-
-static void adc_wait_syncbusy(void)
-{
-    while (ADC->STATUS.bit.SYNCBUSY){}
+    pmc_enable_peripheral_clock(ID_AFEC1);
 }
 
 static void adc_init(void)
 {
-    // Read calib registers here
-    uint16_t calib_reg = ADC_CALIB_BIAS_CAL((*(uint32_t *)ADC_FUSES_BIASCAL_ADDR >> ADC_FUSES_BIASCAL_Pos))
-	            | ADC_CALIB_LINEARITY_CAL((*(uint64_t *)ADC_FUSES_LINEARITY_0_ADDR >> ADC_FUSES_LINEARITY_0_Pos));
+    // Recommended transfer period
+    // 64 AFE perios for start up time
+    // Free run
+    // Only software trigger
+    AFEC1->AFEC_MR = (uint32_t)((AFEC_MR_TRANSFER(2)) | (AFEC_MR_TRACKTIM(15)) | (AFEC_MR_ONE) | (AFEC_MR_STARTUP_SUT64) | (AFEC_MR_PRESCAL(0x31)) | (AFEC_MR_FREERUN_ON) | (AFEC_MR_TRGSEL_AFEC_TRIG0) | (AFEC_MR_TRGEN_DIS));
 
-    adc_wait_syncbusy();
-    if (ADC->CTRLA.bit.ENABLE)
-    {
-        ADC->CTRLA.bit.ENABLE = 0;
-        adc_wait_syncbusy();
-    }
+    // Single trigger mode
+    // Apend channel number to conversion result
+    AFEC1->AFEC_EMR = (uint32_t)((AFEC_EMR_STM) | (AFEC_EMR_TAG));
 
-    ADC->CTRLA.bit.SWRST = 1;
-    adc_wait_syncbusy();
+	// Bias current control setting = 1
+    // Programmable gain amplifiers 0 and 1 are on
+    AFEC1->AFEC_ACR = (uint32_t)(AFEC_ACR_IBCTL(0x1) | (AFEC_ACR_PGA0EN | AFEC_ACR_PGA1EN));
 
-    // Load calib registers here
-    ADC->CALIB.reg = calib_reg;
-
-    // INPUTCTRL
-    ADC->INPUTCTRL.bit.MUXNEG = ADC_INPUTCTRL_MUXNEG_GND_Val;
-    adc_wait_syncbusy();
-    ADC->INPUTCTRL.bit.MUXPOS = ADC_INPUTCTRL_MUXPOS_PIN10_Val;
-    adc_wait_syncbusy();
-
-    // REFCTRL // use VCC/2 as the Aref
-    ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_INTVCC1_Val;
-
-    // CTRLB
-    ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV16_Val;
-    adc_wait_syncbusy();
-    ADC->CTRLB.bit.CORREN = 0; // This seems to be additional correction besides calib
-    adc_wait_syncbusy();
-    ADC->CTRLB.bit.FREERUN = 1;
-    adc_wait_syncbusy();
-
+    // Set the offset compensation to 512, mid value of the DAC in the AFEC
+    // Only for channel 0 since this is the one we are measuring
+    AFEC1->AFEC_CSELR = 0;
+    AFEC1->AFEC_COCR = 0x200;
 }
 
-static void adc_start(void)
+static void adc_enable(void)
 {
-    adc_wait_syncbusy();
-    ADC->CTRLA.bit.ENABLE = 1;
-    adc_wait_syncbusy();
+    // Enabling channel 0
+    AFEC1->AFEC_CHER = (1 << 0);
 
-    ADC->SWTRIG.bit.START = 1;
-    adc_wait_syncbusy();
+    // Trigger the first conversion, afterwards it should run in free run mode
+    AFEC1->AFEC_CR = AFEC_CR_START;
 }
 
 static uint16_t adc_read(void)
 {
-    // wait for RESRDY
-    while(!ADC->INTFLAG.bit.RESRDY){}
-    adc_wait_syncbusy();
-    uint16_t res = ADC->RESULT.reg;
-    res &= 0x0FFF;
+    // Check for end of conversion flag for channel 0
+    // Could check either EOC0 or DRDY since we are only using one channel
+    while(!(AFEC1->AFEC_ISR & (1 << 0))){}
+
+    // reading AFEC_CDR clears the EOC bit
+    // reading AFEC_LCDR clears the DRDY bit
+    // To read AFEC_CDR first select the channel in AFEC_CSELR
+    AFEC1->AFEC_CSELR = 0;
+    uint16_t res = AFEC1->AFEC_CDR;
 
     return res;
 }
@@ -271,7 +402,7 @@ static void delay(int n)
 
     for (;n >0; n--)
     {
-        for (i=0;i<100;i++)
+        for (i=0;i<1000;i++)
             __asm("nop");
     }
 }

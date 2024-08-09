@@ -30,21 +30,21 @@ endif
 # List the subdirectories for creating object files
 SUB_DIRS +=  \
 .. \
-../../xdk-asf/samd21/cmsis/samd21/source \
-../../xdk-asf/samd21/syscalls/gcc \
+../../xdk-asf/samv71/cmsis/samv71/source \
+../../xdk-asf/samv71/syscalls/gcc \
 ../../xdk-asf/common/interrupt
 
 # List the object files
 OBJS +=  \
-../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o \
+../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o \
 ../main.o \
-../../xdk-asf/samd21/syscalls/gcc/syscalls.o \
+../../xdk-asf/samv71/syscalls/gcc/syscalls.o \
 ../../xdk-asf/common/interrupt/interrupt_sam_nvic.o
 
 OBJS_AS_ARGS +=  \
-"../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.o" \
+"../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.o" \
 "../main.o" \
-"../../xdk-asf/samd21/syscalls/gcc/syscalls.o" \
+"../../xdk-asf/samv71/syscalls/gcc/syscalls.o" \
 "../../xdk-asf/common/interrupt/interrupt_sam_nvic.o"
 
 # List the directories containing header files
@@ -52,24 +52,24 @@ DIR_INCLUDES +=  \
 -I"." \
 -I"../../xdk-asf/common" \
 -I"../../xdk-asf/common/interrupt" \
--I"../../xdk-asf/samd21" \
--I"../../xdk-asf/samd21/fpu" \
--I"../../xdk-asf/samd21/preprocessor" \
--I"../../xdk-asf/samd21/header_files" \
--I"../../xdk-asf/samd21/cmsis/samd21/include" \
--I"../../xdk-asf/samd21/cmsis/samd21/source" \
+-I"../../xdk-asf/samv71" \
+-I"../../xdk-asf/samv71/fpu" \
+-I"../../xdk-asf/samv71/preprocessor" \
+-I"../../xdk-asf/samv71/header_files" \
+-I"../../xdk-asf/samv71/cmsis/samv71/include" \
+-I"../../xdk-asf/samv71/cmsis/samv71/source" \
 -I"../../xdk-asf/thirdparty/cmsis/include"
 
 # List the dependency files
 DEPS := $(OBJS:%.o=%.d)
 
 DEPS_AS_ARGS +=  \
-"../../xdk-asf/samd21/cmsis/samd21/source/startup_samd21.d" \
+"../../xdk-asf/samv71/cmsis/samv71/source/startup_samv71.d" \
 "../main.d" \
-"../../xdk-asf/samd21/syscalls/gcc/syscalls.d" \
+"../../xdk-asf/samv71/syscalls/gcc/syscalls.d" \
 "../../xdk-asf/common/interrupt/interrupt_sam_nvic.d"
 
-OUTPUT_FILE_NAME :=application_samd21
+OUTPUT_FILE_NAME :=application_samv71
 QUOTE := "
 OUTPUT_FILE_PATH +=$(OUTPUT_FILE_NAME).elf
 OUTPUT_FILE_PATH_AS_ARGS +=$(OUTPUT_FILE_NAME).elf
@@ -87,10 +87,10 @@ $(OUTPUT_FILE_PATH): $(OBJS)
 	@echo Building target: $@
 	@echo Invoking: ARM/GNU Linker
 	$(QUOTE)arm-none-eabi-gcc$(QUOTE) -o $(OUTPUT_FILE_NAME).elf $(OBJS_AS_ARGS) -Wl,--start-group -lm -Wl,--end-group -mthumb \
--Wl,-Map="$(OUTPUT_FILE_NAME).map" --specs=nano.specs -Wl,--gc-sections -mcpu=cortex-m0plus \
+-Wl,-Map="$(OUTPUT_FILE_NAME).map" --specs=nano.specs -Wl,--gc-sections -mcpu=cortex-m7 \
  \
--T"../../xdk-asf/samd21/linker_scripts/samd21g18a_flash.ld" \
--L"../../xdk-asf/samd21/linker_scripts"
+-T"../../xdk-asf/samv71/linker_scripts/samv71q21b_flash.ld" \
+-L"../../xdk-asf/samv71/linker_scripts"
 	@echo Finished building target: $@
 
 	"arm-none-eabi-objcopy" -O binary "$(OUTPUT_FILE_NAME).elf" "$(OUTPUT_FILE_NAME).bin"
@@ -113,7 +113,7 @@ $(OUTPUT_FILE_PATH): $(OBJS)
 	@echo Building file: $<
 	@echo ARM/GNU C Compiler
 	$(QUOTE)arm-none-eabi-gcc$(QUOTE) -x c -mthumb -DDEBUG -Os -ffunction-sections -mlong-calls -g3 -Wall -c -std=gnu99 \
--D__SAMD21G18A__ -mcpu=cortex-m0plus  \
+-D__SAMV71Q21B__ -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 \
 $(DIR_INCLUDES) \
 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"  -o "$@" "$<"
 	@echo Finished building: $<
@@ -122,7 +122,7 @@ $(DIR_INCLUDES) \
 	@echo Building file: $<
 	@echo ARM/GNU Assembler
 	$(QUOTE)arm-none-eabi-as$(QUOTE) -x c -mthumb -DDEBUG -Os -ffunction-sections -mlong-calls -g3 -Wall -c -std=gnu99 \
--D__SAMD21G18A__ -mcpu=cortex-m0plus  \
+-D__SAMV71Q21B__ -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 \
 $(DIR_INCLUDES) \
 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"  -o "$@" "$<"
 	@echo Finished building: $<
@@ -131,7 +131,7 @@ $(DIR_INCLUDES) \
 	@echo Building file: $<
 	@echo ARM/GNU Preprocessing Assembler
 	$(QUOTE)arm-none-eabi-gcc$(QUOTE) -x c -mthumb -DDEBUG -Os -ffunction-sections -mlong-calls -g3 -Wall -c -std=gnu99 \
--D__SAMD21G18A__ -mcpu=cortex-m0plus  \
+-D__SAMV71Q21B__ -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 \
 $(DIR_INCLUDES) \
 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"  -o "$@" "$<"
 	@echo Finished building: $<
@@ -153,5 +153,3 @@ clean:
 	rm -f $(OUTPUT_FILE_NAME).a $(OUTPUT_FILE_NAME).hex $(OUTPUT_FILE_NAME).bin \
         $(OUTPUT_FILE_NAME).lss $(OUTPUT_FILE_NAME).eep $(OUTPUT_FILE_NAME).map \
         $(OUTPUT_FILE_NAME).srec
-
-.PHONY: all clean
