@@ -19,6 +19,7 @@ static uint32_t usart_read(uint8_t *buffer, const uint16_t length);
 static void adc_clock_init(void);
 static void adc_init(void);
 static void adc_enable(void);
+static uint16_t adc_read(void);
 
 
 static void delay(int n);
@@ -49,8 +50,8 @@ int main()
     while(1)
     {
 
-        // uint16_t adc_reding = adc_read();
-        uint16_t adc_reding = 5;
+        uint16_t adc_reding = adc_read();
+        // uint16_t adc_reding = 5;
 
         char output_msg[100];
 		uint16_t count = sprintf(output_msg, "The ADC measurement is: %d\r\n", adc_reding);
@@ -375,6 +376,24 @@ static void adc_enable(void)
 {
     // Enabling channel 0
     AFEC1->AFEC_CHER = (1 << 0);
+
+    // Trigger the first conversion, afterwards it should run in free run mode
+    AFEC1->AFEC_CR = AFEC_CR_START;
+}
+
+static uint16_t adc_read(void)
+{
+    // Check for end of conversion flag for channel 0
+    // Could check either EOC0 or DRDY since we are only using one channel
+    while(!(AFEC1->AFEC_ISR & (1 << 0))){}
+
+    // reading AFEC_CDR clears the EOC bit
+    // reading AFEC_LCDR clears the DRDY bit
+    // To read AFEC_CDR first select the channel in AFEC_CSELR
+    AFEC1->AFEC_CSELR = 0;
+    uint16_t res = AFEC1->AFEC_CDR;
+
+    return res;
 }
 
 static void delay(int n)
