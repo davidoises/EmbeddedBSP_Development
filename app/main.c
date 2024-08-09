@@ -307,11 +307,19 @@ static uint32_t usart_write(const uint8_t *buffer, const uint16_t length)
 
     uint32_t counter = 0;
 
+    while (!(UART0->UART_SR & UART_SR_TXRDY)){}
+
     while (counter < length)
     {
-        // buffer[counter];
+        // Write into the transmit hold register
+        UART0->UART_THR = UART_THR_TXCHR(buffer[counter]);
+
+        while (!(UART0->UART_SR & UART_SR_TXRDY)){}
+
         counter++;
     }
+
+    while (!(UART0->UART_SR & UART_SR_TXEMPTY)){}
 
     return counter;
 }
