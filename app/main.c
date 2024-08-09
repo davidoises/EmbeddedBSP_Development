@@ -169,6 +169,14 @@ static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count)
 static void pio_init(void)
 {
     uint32_t temp;
+    // For the following PB port pins set 1 on their corresponding pin to enable the PIO functionality
+    // MATRIX->CCFG_SYSIO
+    // PB12 or ERASE
+    // PB7 or TCK/SWCLK
+    // PB6 or TMS/SWDIO
+    // PB5 or TDO/TRACESWO
+    // PB4 or TDI
+
     // Enableing and muxing
     // PIO_PER (PIO enable register) - controls if PIO is in control of the IO line, 1 means control by PIO
     // PIO_PDR (PIO disable register)
@@ -200,6 +208,7 @@ static void pio_init(void)
     // PIO_PDSR ( Data status register) - reads the value on the line regardless of the configuration
 
     // PB12 input with pull up
+    MATRIX->CCFG_SYSIO |= PIO_PB12;
     PIOB->PIO_ODR |= PIO_PB12; //  Disable output
     PIOB->PIO_PPDDR |= PIO_PB12; // Disable pulldown
     PIOB->PIO_PUER |= PIO_PB12; // Enable Pull up
@@ -214,13 +223,6 @@ static void pio_init(void)
     PIOC->PIO_CODR |= PIO_PC10; // Clear output
     PIOC->PIO_OER |= PIO_PC10; //  Enable output
     PIOC->PIO_PER |= PIO_PC10; // I/O mode
-
-    // TODO: Need to look at this
-    // if ((enum gpio_port)port == GPIO_PORTB) {
-	// 	if ((pin == 4) || (pin == 5) || (pin == 6) || (pin == 7) || (pin == 12)) {
-	// 		hri_matrix_set_CCFG_SYSIO_reg(MATRIX, (0x1 << pin));
-	// 	}
-	// }
 
     // PA9 UART0 Rx (Peripheral function A)
     temp = PIOA->PIO_ABCDSR[0];
