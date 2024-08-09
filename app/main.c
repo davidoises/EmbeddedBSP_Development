@@ -14,16 +14,24 @@
 static void system_init(void);
 static void pmc_init(void);
 
+static void pmc_enable_peripheral_clock(uint32_t pid);
+static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count);
+static void usart_clock_init(void);
+static void adc_clock_init(void);
+
 
 static void delay(int n);
+
+uint16_t pio_pids[] = {ID_PIOB, ID_PIOC};
 
 int main()
 {
 
     system_init();
 
-    // usart_clock_init();
-    // adc_clock_init();
+    pio_clock_init(pio_pids, sizeof(pio_pids)/sizeof(pio_pids[0]));
+    usart_clock_init();
+    adc_clock_init();
 
     // usart_init();
     // adc_init();
@@ -41,16 +49,16 @@ int main()
 
         // PORT->Group[0].OUT.reg &= ~PORT_PA27;
         // PORT->Group[1].OUT.reg &= ~PORT_PB03;
-        // delay(200);
+        delay(200);
         // PORT->Group[0].OUT.reg |= PORT_PA27;
         // PORT->Group[1].OUT.reg |= PORT_PB03;
-        // delay(100);
+        delay(100);
         // PORT->Group[0].OUT.reg &= ~PORT_PA27;
         // PORT->Group[1].OUT.reg &= ~PORT_PB03;
-        // delay(200);
+        delay(200);
         // PORT->Group[0].OUT.reg |= PORT_PA27;
         // PORT->Group[1].OUT.reg |= PORT_PB03;
-        // delay(1000);
+        delay(1000);
     }
 }
 
@@ -125,6 +133,51 @@ static void pmc_init(void)
     temp |= PMC_MCKR_CSS_PLLA_CLK;
     PMC->PMC_MCKR = temp; // Select the PLLA
     while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
+}
+
+static void pmc_enable_peripheral_clock(uint32_t pid)
+{
+    // Refer to section 31.20.4 for PCER0 as an example
+    // PCER0, PCSR0, PCDR0 have the same bit assignments
+    // PCER0, PCSR0, PCDR0 control clocks for perpheral IDs [7,31]
+
+    // Refer to section 31.20.23 for PCER1 as an example
+    // PCER1, PCSR1, PCDR1 have the same bit assignments
+    // PCER1, PCSR1, PCDR1 control clocks for perpheral IDs [32,62]
+
+    if (pid < 32)
+    {
+        PMC->PMC_PCER0 = (1 << pid);
+    }
+    else if (pid < 64)
+    {
+        uint32_t relative_pid = pid -32;
+        PMC->PMC_PCER1 = (1 << relative_pid);
+    }
+
+    // I2S peripherals need to follow the next steps but wont be implemented at this time
+    // In theory the previous part can also be achieved through the regiser PMC_PCR
+    // 1. Set the preripheral ID number
+    // 2. Change the CLKDIV or GCLKSS if needed. By default GCLKCSS is SLOW_CLK
+    // 3. Then set CMD = 1 (write) and EN = 1
+}
+
+static void pio_clock_init(uint16_t *pio_pids, uint16_t pio_count)
+{
+    for (uint16_t i = 0; i < pio_count; i++)
+    {
+        pmc_enable_peripheral_clock(pio_pids[i]);
+    }
+}
+
+static void usart_clock_init(void)
+{
+    pmc_enable_peripheral_clock(ID_UART0);
+}
+
+static void adc_clock_init(void)
+{
+    pmc_enable_peripheral_clock(ID_AFEC1);
 }
 
 static void delay(int n)
