@@ -1,6 +1,5 @@
 #include "pio_driver.h"
 
-#include "pio_driver_interface.h"
 #include "mcu.h"
 #include "pio_config.h"
 #include "pmc_driver.h"

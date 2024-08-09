@@ -44,6 +44,7 @@ OBJS +=  \
 ../../xdk-asf/common/interrupt/interrupt_sam_nvic.o \
 ../../BSP/src/samv71/drivers/pio_driver.o \
 ../../BSP/src/samv71/drivers/pmc_driver.o \
+../../BSP/src/samv71/drivers/adc_driver.o \
 ../config/samv71/pio_config.o
 
 OBJS_AS_ARGS +=  \
@@ -53,6 +54,7 @@ OBJS_AS_ARGS +=  \
 "../../xdk-asf/common/interrupt/interrupt_sam_nvic.o" \
 "../../BSP/src/samv71/drivers/pio_driver.o" \
 "../../BSP/src/samv71/drivers/pmc_driver.o" \
+"../../BSP/src/samv71/drivers/adc_driver.o" \
 "../config/samv71/pio_config.o"
 
 # List the directories containing header files
@@ -82,6 +84,7 @@ DEPS_AS_ARGS +=  \
 "../../BSP/src/samv71/drivers/pio_driver.d" \
 "../../BSP/src/samv71/config/pio_config.d" \
 "../../BSP/src/samv71/drivers/pmc_driver.d" \
+"../../BSP/src/samv71/drivers/adc_driver.d" \
 "../config/samv71/pio_config.d"
 
 OUTPUT_FILE_NAME :=application_samv71

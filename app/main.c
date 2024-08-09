@@ -2,6 +2,7 @@
 
 extern const struct pmc_driver_interface pmc_driver;
 extern const struct pio_driver_interface pio_driver;
+extern const struct adc_driver_interface adc_driver;
 
 static void system_init(void);
 
@@ -9,8 +10,17 @@ int main()
 {
     system_init();
 
-    pio_driver.init();
+    // Enable peripheral clocks
     pio_driver.clock_init();
+    adc_driver.clock_init();
+
+    // Configure peripherals
+    adc_driver.init();
+    pio_driver.init();
+
+    // Start peripheral operation
+    adc_driver.enable();
+
 
     while(1)
     {

@@ -1,15 +1,14 @@
 #include "pmc_driver.h"
 
-#include "pmc_driver_interface.h"
 #include "mcu.h"
 
 static void pmc_driver_init(void);
-static void pmc_enable_peripheral_clock(const uint32_t pid);
+static void pmc_driver_enable_peripheral_clock(const uint32_t pid);
 
 extern const struct pmc_driver_interface pmc_driver;
 const struct pmc_driver_interface pmc_driver = {
     .init = &pmc_driver_init,
-    .enable_peripheral_clock = &pmc_enable_peripheral_clock,
+    .enable_peripheral_clock = &pmc_driver_enable_peripheral_clock,
 };
 
 static void pmc_driver_init(void)
@@ -68,7 +67,7 @@ static void pmc_driver_init(void)
     while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
 }
 
-void pmc_enable_peripheral_clock(const uint32_t pid)
+void pmc_driver_enable_peripheral_clock(const uint32_t pid)
 {
     // Refer to section 31.20.4 for PCER0 as an example
     // PCER0, PCSR0, PCDR0 have the same bit assignments
