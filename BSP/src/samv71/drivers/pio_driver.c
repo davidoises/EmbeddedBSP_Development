@@ -133,7 +133,7 @@ static void mode_configuration(const enum gpio_port port, const uint32_t pin, co
     if (port == GPIO_PORTB)
     {
         if ((pin == PIO_PB4) || (pin == PIO_PB5) || (pin == PIO_PB6) || (pin == PIO_PB7) || (pin == PIO_PB12)) {
-			MATRIX->CCFG_SYSIO |= PIO_PB12;
+			MATRIX->CCFG_SYSIO |= pin;
 		}
     }
 
