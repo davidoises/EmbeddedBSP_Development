@@ -5,7 +5,7 @@
 
 #define PIO_PID_COUNT 2
 
-#define LED_PORT GPIO_PORTC
-#define LED_PIN PIO_PC9
+#define LED_PORT GPIO_PORTA
+#define LED_PIN PIO_PA23
 
 #endif // _PIO_CONFIG_H_
