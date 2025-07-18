@@ -62,6 +62,7 @@ int main()
     adc_driver.enable();
     uart_driver.enable();
 
+    delay(10000);
     uart_driver.write((uint8_t *)"Hello World!\r\n", 14);
 
     bool led_state = false;
@@ -79,7 +80,7 @@ int main()
         led_state = led_state ? false : true;
         pio_driver.set_io_level(LED_PORT, LED_PIN, led_state);
 
-        delay(10000);
+        delay(10000*50);
 
     }
 }

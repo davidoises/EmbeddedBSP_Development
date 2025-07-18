@@ -44,11 +44,10 @@ static void pmc_driver_init(void)
     // Note: CKGR_PLLAR requires to always have 1 written to it on bit 29 (CKGR_PLLAR_ONE)
 
     // stop it first
-    temp = PMC->CKGR_PLLAR ;
-	temp &= ~CKGR_PLLAR_MULA_Msk;
-	temp |= CKGR_PLLAR_MULA(0);
-	PMC->CKGR_PLLAR = temp;
-    // PMC->CKGR_PLLAR = CKGR_PLLAR_MULA(0);
+    // temp = PMC->CKGR_PLLAR ;
+	// temp &= ~CKGR_PLLAR_MULA_Msk;
+	// temp |= CKGR_PLLAR_MULA(0);
+	// PMC->CKGR_PLLAR = temp;
 
     PMC->CKGR_PLLAR = (CKGR_PLLAR_MULA((25-1)) | CKGR_PLLAR_DIVA(1) | CKGR_PLLAR_PLLACOUNT(63) | CKGR_PLLAR_ONE);
     // Wait for PLLA to stabilize
