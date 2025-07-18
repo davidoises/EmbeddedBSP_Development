@@ -42,6 +42,13 @@ static void pmc_driver_init(void)
     // Section 31.17 datasheet
     // 6. Configure MAIN CLOCK -> PLLA
     // Note: CKGR_PLLAR requires to always have 1 written to it on bit 29 (CKGR_PLLAR_ONE)
+
+    // stop it first
+    // temp = PMC->CKGR_PLLAR ;
+	// temp &= ~CKGR_PLLAR_MULA_Msk;
+	// temp |= CKGR_PLLAR_MULA(0);
+	// PMC->CKGR_PLLAR = temp;
+
     PMC->CKGR_PLLAR = (CKGR_PLLAR_MULA((25-1)) | CKGR_PLLAR_DIVA(1) | CKGR_PLLAR_PLLACOUNT(63) | CKGR_PLLAR_ONE);
     // Wait for PLLA to stabilize
     while (!(PMC->PMC_SR && PMC_SR_LOCKA)){}
@@ -56,7 +63,7 @@ static void pmc_driver_init(void)
 
     temp = PMC->PMC_MCKR;
     temp &= ~PMC_MCKR_MDIV_Msk;
-    temp |= PMC_MCKR_MDIV(0);
+    temp |= PMC_MCKR_MDIV(1);
     PMC->PMC_MCKR = temp; // Divider of 1
     while (!(PMC->PMC_SR && PMC_SR_MCKRDY)){}
 

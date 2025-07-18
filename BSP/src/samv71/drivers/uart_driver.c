@@ -3,9 +3,9 @@
 #include "mcu.h"
 #include "pmc_driver.h"
 
-#define CONF_UART_0_BAUD 115200
-#define CONF_UART0_FREQUENCY 150000000
-#define CONF_UART_0_BAUD_CD ((CONF_UART0_FREQUENCY) / CONF_UART_0_BAUD / 16)
+#define CONF_UART_1_BAUD 115200
+#define CONF_UART1_FREQUENCY 150000000
+#define CONF_UART_1_BAUD_CD (CONF_UART1_FREQUENCY / CONF_UART_1_BAUD / 16)
 
 static void uart_driver_init(void);
 static void uart_driver_clock_init(void);
@@ -27,36 +27,36 @@ const struct uart_driver_interface uart_driver = {
 static void uart_driver_init(void)
 {
     // Set the write protection key and disable write protection
-    UART0->UART_WPMR = UART_WPMR_WPKEY_PASSWD;
+    UART1->UART_WPMR = UART_WPMR_WPKEY_PASSWD;
 
     // UART_CR_RSTRX - Put the receiver into reset state
     // UART_CR_RSTTX - Put the transmiter into reset state
     // UART_CR_RXDIS - disable receiver
     // UART_CR_TXDIS - disable transmiter
-    UART0->UART_CR = (UART_CR_RSTRX | UART_CR_RXDIS | UART_CR_RSTTX | UART_CR_TXDIS);
+    UART1->UART_CR = (UART_CR_RSTRX | UART_CR_RXDIS | UART_CR_RSTTX | UART_CR_TXDIS);
 
     // UART_CR_RSTSTA - Resets PARE, FRAME, CMP, OVRE in the UART_SR register
-    UART0->UART_CR = UART_CR_RSTSTA;
+    UART1->UART_CR = UART_CR_RSTSTA;
 
     // UART_MR_BRSRCCK_PERIPH_CLK - Baud rate source clock is peripheral clock
     // UART_MR_PAR_NO - no parity
     // UART_MR_CHMODE_NORMAL - no testing mode
     // UART_MR_FILTER_DISABLED - no filter
-    UART0->UART_MR = (UART_MR_BRSRCCK_PERIPH_CLK | UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL | UART_MR_FILTER_DISABLED);
+    UART1->UART_MR = (UART_MR_BRSRCCK_PERIPH_CLK | UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL | UART_MR_FILTER_DISABLED);
 
     // Configure the UART baud rate
-    UART0->UART_BRGR = UART_BRGR_CD(CONF_UART_0_BAUD_CD);
+    UART1->UART_BRGR = UART_BRGR_CD(CONF_UART_1_BAUD_CD);
 }
 
 static void uart_driver_clock_init(void)
 {
-    pmc_driver.enable_peripheral_clock(ID_UART0);
+    pmc_driver.enable_peripheral_clock(ID_UART1);
 }
 
 static void uart_driver_enable(void)
 {
     // Enable the receiver and transmiter
-    UART0->UART_CR = (UART_CR_RXEN | UART_CR_TXEN);
+    UART1->UART_CR = (UART_CR_RXEN | UART_CR_TXEN);
 }
 
 static uint32_t uart_driver_write(const uint8_t *buffer, const uint16_t length)
@@ -68,19 +68,19 @@ static uint32_t uart_driver_write(const uint8_t *buffer, const uint16_t length)
 
     uint32_t counter = 0;
 
-    while (!(UART0->UART_SR & UART_SR_TXRDY)){}
+    while (!(UART1->UART_SR & UART_SR_TXRDY)){}
 
     while (counter < length)
     {
         // Write into the transmit hold register
-        UART0->UART_THR = UART_THR_TXCHR(buffer[counter]);
+        UART1->UART_THR = UART_THR_TXCHR(buffer[counter]);
 
-        while (!(UART0->UART_SR & UART_SR_TXRDY)){}
+        while (!(UART1->UART_SR & UART_SR_TXRDY)){}
 
         counter++;
     }
 
-    while (!(UART0->UART_SR & UART_SR_TXEMPTY)){}
+    while (!(UART1->UART_SR & UART_SR_TXEMPTY)){}
 
     return counter;
 }

@@ -41,11 +41,17 @@ int main()
     pio_driver.mode_configuration(GPIO_PORTC, PIO_PC10, GPIO_DIRECTION_OUT);
     pio_driver.set_io_level(GPIO_PORTC, PIO_PC10, false);
 
-    // PA9 UART0 Rx (Peripheral function A)
-    pio_driver.mode_configuration(GPIO_PORTA, PIO_PA9, GPIO_PERIPH_A);
+    // // PA9 UART0 Rx (Peripheral function A)
+    // pio_driver.mode_configuration(GPIO_PORTA, PIO_PA9, GPIO_PERIPH_A);
 
-    // PA10 UART0 Tx (Peripheral function A)
-    pio_driver.mode_configuration(GPIO_PORTA, PIO_PA10, GPIO_PERIPH_A);
+    // // PA10 UART0 Tx (Peripheral function A)
+    // pio_driver.mode_configuration(GPIO_PORTA, PIO_PA10, GPIO_PERIPH_A);
+
+    // PA5 UART1 Rx (Peripheral function C)
+    pio_driver.mode_configuration(GPIO_PORTA, PIO_PA5, GPIO_PERIPH_C);
+
+    // PA6 UART1 Tx (Peripheral function C)
+    pio_driver.mode_configuration(GPIO_PORTA, PIO_PA6, GPIO_PERIPH_C);
 
     // PB1 AFEC 1 Channel 0
     pio_driver.mode_configuration(GPIO_PORTB, PIO_PB1, GPIO_DIRECTION_OFF);
@@ -56,6 +62,11 @@ int main()
     adc_driver.enable();
     uart_driver.enable();
 
+    delay(10000);
+    uart_driver.write((uint8_t *)"Hello World!\r\n", 14);
+
+    bool led_state = false;
+
 
     while(1)
     {
@@ -65,14 +76,12 @@ int main()
 		uint16_t count = sprintf(output_msg, "The ADC value is: %d\r\n", adc_reding);
         uart_driver.write((uint8_t *)output_msg, count);
 
-        pio_driver.set_io_level(LED_PORT, LED_PIN, false);
-        delay(200);
-        pio_driver.set_io_level(LED_PORT, LED_PIN, true);
-        delay(100);
-        pio_driver.set_io_level(LED_PORT, LED_PIN, false);
-        delay(200);
-        pio_driver.set_io_level(LED_PORT, LED_PIN, true);
-        delay(1000);
+
+        led_state = led_state ? false : true;
+        pio_driver.set_io_level(LED_PORT, LED_PIN, led_state);
+
+        delay(10000*50);
+
     }
 }
 
