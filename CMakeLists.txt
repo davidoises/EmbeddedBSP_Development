@@ -12,13 +12,10 @@ set(CMAKE_TOOLCHAIN_FILE
 set(target_board "samv71-evalkit" CACHE STRING "Target board name")
 if(target_board STREQUAL "samv71-evalkit")
     set(target_mcu "ATSAMV71Q21B")
-    # set(target_mcu_family "SAMV71")
 elseif(target_board STREQUAL "samd21-evalkit")
     set(target_mcu "ATSAMD21G18A")
-    # set(target_mcu_family "SAMD21")
 elseif(target_board STREQUAL "NUCLEO-F446RE")
     set(target_mcu "STM32F446RE")
-    # set(target_mcu_family "STM32F4")
 else()
     message(FATAL_ERROR "Unknown target_board: ${target_board}")
 endif()
@@ -46,8 +43,8 @@ set(INCS
 
 # Define source files 
 set(SRCS  
+    # ${CMAKE_CURRENT_SOURCE_DIR}/app/main_f4.c
     ${CMAKE_CURRENT_SOURCE_DIR}/app/main.c
-    
 )
 
 ##### 3. Include board and mcu specific compilation files.
@@ -56,6 +53,11 @@ set(SRCS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/board_${target_board}.cmake)
 
 ##### 4. Use board and MCU specifics to build the whole project.
+
+# This is one way to generate disassembly
+# list(APPEND CPU_PARAMETERS
+#     -Wa,-adhlns=${CMAKE_PROJECT_NAME}.list
+# )
 
 set(BUILD_LD_FLAGS
     ${CPU_PARAMETERS}
@@ -114,5 +116,12 @@ add_custom_command(
             ${CMAKE_PROJECT_NAME}.elf
             ${CMAKE_PROJECT_NAME}.bin
     COMMENT "Generate binary file"
+    VERBATIM
+)
+
+add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND touch ${CMAKE_PROJECT_NAME}.list && ${CMAKE_OBJDUMP} -d ${CMAKE_PROJECT_NAME}.elf > ${CMAKE_PROJECT_NAME}.list
+    COMMENT "Generate disassembly file"
     VERBATIM
 )

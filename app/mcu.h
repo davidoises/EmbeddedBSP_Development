@@ -8,13 +8,10 @@
 #elif defined(__SAMV71Q21B__) || defined(__ATSAMV71Q21B__)
 #include "samv71.h"
 #include "fpu.h"
+#elif defined(STM32F446xx)
+#include "stm32f4xx.h"  
 #else
   #error Library does not support the specified device.
 #endif
-
-#include "pio_driver.h"
-#include "pmc_driver.h"
-#include "adc_driver.h"
-#include "uart_driver.h"
 
 #endif // _MCU_H_
