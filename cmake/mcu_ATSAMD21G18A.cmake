@@ -1,15 +1,13 @@
 # Define processor-specific parameters
 set(CPU_PARAMETERS
-    -mcpu=cortex-m7
+    -mcpu=cortex-m0plus
     -mthumb
-    -mfpu=fpv5-d16 -mfloat-abi=hard
-    -mlong-calls -mno-unaligned-access
 )
 
-set(target_mcu_family "samv71")
+set(target_mcu_family "samd21")
 
 list(APPEND MACRO_DEFINES
-    __SAMV71Q21B__
+    __SAMD21G18A__
 )
 
 # Define include directories
@@ -20,7 +18,6 @@ list(APPEND INCS
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/common
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/common/interrupt
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/${target_mcu_family}
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/${target_mcu_family}/fpu
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/${target_mcu_family}/preprocessor
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/${target_mcu_family}/header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/xdk-asf/${target_mcu_family}/cmsis/${target_mcu_family}/include
