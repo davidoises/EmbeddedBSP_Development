@@ -80,7 +80,8 @@ int main()
         led_state = led_state ? false : true;
         pio_driver.set_io_level(LED_PORT, LED_PIN, led_state);
 
-        delay(10000*50);
+        // delay(10000*50);
+        delay(10000);
 
     }
 }
