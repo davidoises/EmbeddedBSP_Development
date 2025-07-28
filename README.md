@@ -29,4 +29,15 @@ To build, go to the app folder and run one of the following commands:
 
 ## Flashing
 
-Any method for flashing Atmel MCUs should work. This was tested with the embedded debug probe on the ATSAMD21 Explained Pro and using MPLAB Programming Tool from Atmel.
+Any method for flashing Atmel MCUs should work. This was tested with:
+- the embedded debug probe on the ATSAMD21/ATSAMV71 Explained Pro and using MPLAB Programming Tool from Atmel.
+- Nucleo-F446RE/ATSAMV71 Explained Ultra/Arduino Zero wirh integrated debugger with openocd
+
+Nucleo-F446RE
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c "program ./embedded_app.elf verify reset exit"
+
+ATSAMV71 Explained Ultra
+openocd -f ~/EmbeddedBSP_Development/flashing/jlink_swd.cfg -f board/atmel_samv71_xplained_ultra.cfg -c "program ./embedded_app.elf verify reset exit"
+
+Arduino Zero
+openocd -f ~/EmbeddedBSP_Development/flashing/arduino_zero.cfg -c "program ./embedded_app.elf verify reset exit"

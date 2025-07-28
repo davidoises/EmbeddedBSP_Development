@@ -1,6 +1,12 @@
-#include <stdio.h>
 #include "mcu.h"
 #include "pio_config.h"
+
+#include "pio_driver.h"
+#include "pmc_driver.h"
+#include "adc_driver.h"
+#include "uart_driver.h"
+
+#include <stdio.h>
 
 extern const struct pmc_driver_interface pmc_driver;
 extern const struct pio_driver_interface pio_driver;
@@ -80,7 +86,8 @@ int main()
         led_state = led_state ? false : true;
         pio_driver.set_io_level(LED_PORT, LED_PIN, led_state);
 
-        delay(10000*50);
+        // delay(10000*50);
+        delay(10000);
 
     }
 }
